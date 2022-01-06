@@ -17,6 +17,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TurnerSoftware.DinoDNS.Benchmarks", "benchmarks\TurnerSoftware.DinoDNS.Benchmarks\TurnerSoftware.DinoDNS.Benchmarks.csproj", "{11BED4F7-B487-40B4-AF1D-6E315B413006}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{A096D678-DFDF-41AF-A088-C8738CE254F3}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		License.txt = License.txt
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
