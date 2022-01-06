@@ -5,36 +5,26 @@ namespace TurnerSoftware.DinoDNS.Protocol;
 /// <summary>
 /// Represents the first 12-bytes of a DNS message
 /// </summary>
-public ref struct Header
+public readonly record struct Header(
+	ushort Identification, 
+	HeaderFlags Flags, 
+	ushort QuestionRecordCount,
+	ushort AnswerRecordCount,
+	ushort AuthorityRecordCount,
+	ushort AdditionalRecordCount
+)
 {
 	public const int Length = 12;
 
-	public ushort Identification;
-	public HeaderFlags Flags;
-	public ushort QuestionRecordCount;
-	public ushort AnswerRecordCount;
-	public ushort AuthorityRecordCount;
-	public ushort AdditionalRecordCount;
-
-	public Header(ReadOnlySpan<byte> source)
-	{
-		Identification = BinaryPrimitives.ReadUInt16BigEndian(source[..2]);
-		Flags = new HeaderFlags(source[2..4]);
-		QuestionRecordCount = BinaryPrimitives.ReadUInt16BigEndian(source[4..6]);
-		AnswerRecordCount = BinaryPrimitives.ReadUInt16BigEndian(source[6..8]);
-		AuthorityRecordCount = BinaryPrimitives.ReadUInt16BigEndian(source[8..10]);
-		AdditionalRecordCount = BinaryPrimitives.ReadUInt16BigEndian(source[10..12]);
-	}
-
-	public void WriteTo(Span<byte> destination)
-	{
-		BinaryPrimitives.WriteUInt16BigEndian(destination[..2], Identification);
-		Flags.WriteTo(destination[2..4]);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[4..6], QuestionRecordCount);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[6..8], AnswerRecordCount);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[8..10], AuthorityRecordCount);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[10..12], AdditionalRecordCount);
-	}
+	public Header(ReadOnlySpan<byte> source) : this(
+		BinaryPrimitives.ReadUInt16BigEndian(source[..2]),
+		new HeaderFlags(source[2..4]),
+		BinaryPrimitives.ReadUInt16BigEndian(source[4..6]),
+		BinaryPrimitives.ReadUInt16BigEndian(source[6..8]),
+		BinaryPrimitives.ReadUInt16BigEndian(source[8..10]),
+		BinaryPrimitives.ReadUInt16BigEndian(source[10..12])
+	)
+	{ }
 
 	public override string ToString()
 	{
@@ -46,60 +36,54 @@ public ref struct Header
 /// <summary>
 /// Represents the 2-byte header flags of a DNS message
 /// </summary>
-public ref struct HeaderFlags
+/// <param name="Value">The raw value representing the combined header flags.</param>
+public readonly record struct HeaderFlags(ushort Value)
 {
-	private ushort Value;
-
 	public QueryOrResponse QueryOrResponse
 	{
 		get => (QueryOrResponse)(Value & 0b10000000_00000000);
-		set => Value = (ushort)(Value & ~0b10000000_00000000 | (int)value);
+		init => Value = (ushort)(Value & ~0b10000000_00000000 | (int)value);
 	}
 	public Opcode Opcode
 	{
 		get => (Opcode)(Value & 0b01111000_00000000);
-		set => Value = (ushort)(Value & ~0b01111000_00000000 | (int)value);
+		init => Value = (ushort)(Value & ~0b01111000_00000000 | (int)value);
 	}
 	public AuthoritativeAnswer AuthoritativeAnswer
 	{
 		get => (AuthoritativeAnswer)(Value & 0b00000100_00000000);
-		set => Value = (ushort)(Value & ~0b00000100_00000000 | (int)value);
+		init => Value = (ushort)(Value & ~0b00000100_00000000 | (int)value);
 	}
 	public Truncation Truncation
 	{
 		get => (Truncation)(Value & 0b00000010_00000000);
-		set => Value = (ushort)(Value & ~0b00000010_00000000 | (int)value);
+		init => Value = (ushort)(Value & ~0b00000010_00000000 | (int)value);
 	}
 	public RecursionDesired RecursionDesired
 	{
 		get => (RecursionDesired)(Value & 0b00000001_00000000);
-		set => Value = (ushort)(Value & ~0b00000001_00000000 | (int)value);
+		init => Value = (ushort)(Value & ~0b00000001_00000000 | (int)value);
 	}
 	public RecursionAvailable RecursionAvailable
 	{
 		get => (RecursionAvailable)(Value & 0b00000000_10000000);
-		set => Value = (ushort)(Value & ~0b00000000_10000000 | (int)value);
+		init => Value = (ushort)(Value & ~0b00000000_10000000 | (int)value);
 	}
 	public ushort Z
 	{
 		get => (ushort)((Value & 0b00000000_01110000) >> 4);
-		set => Value = (ushort)(Value & ~0b00000000_01110000 | value << 4);
+		init => Value = (ushort)(Value & ~0b00000000_01110000 | value << 4);
 	}
 	public ResponseCode ResponseCode
 	{
 		get => (ResponseCode)(Value & 0b00000000_00001111);
-		set => Value = (ushort)(Value & ~0b00000000_00001111 | (int)value);
+		init => Value = (ushort)(Value & ~0b00000000_00001111 | (int)value);
 	}
 
-	public HeaderFlags(ReadOnlySpan<byte> source)
-	{
-		Value = BinaryPrimitives.ReadUInt16BigEndian(source);
-	}
-
-	public void WriteTo(Span<byte> destination)
-	{
-		BinaryPrimitives.WriteUInt16BigEndian(destination, Value);
-	}
+	public HeaderFlags(ReadOnlySpan<byte> source) : this(
+		BinaryPrimitives.ReadUInt16BigEndian(source)
+	)
+	{ }
 
 	public override string ToString() => $"[{Convert.ToString(Value,2).PadLeft(16,'0')}/{QueryOrResponse},{Opcode},{AuthoritativeAnswer},{Truncation},{RecursionDesired},{RecursionAvailable},{Z},{ResponseCode}]";
 }

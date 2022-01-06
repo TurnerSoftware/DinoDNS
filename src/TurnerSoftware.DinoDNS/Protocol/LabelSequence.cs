@@ -2,61 +2,95 @@
 
 namespace TurnerSoftware.DinoDNS.Protocol;
 
-public ref partial struct LabelSequence
+public readonly partial struct LabelSequence
 {
-	public const ushort PointerFlagByte = 0b11000000;
-	public const byte PointerLength = sizeof(ushort);
+	private readonly SeekableMemory<byte> ByteValue;
+	private readonly ReadOnlyMemory<char> CharValue;
+	private readonly bool IsByteSequence;
 
-	private readonly SeekableReadOnlySpan<byte> Value;
-
-	public LabelSequence(SeekableReadOnlySpan<byte> value)
+	public LabelSequence(SeekableMemory<byte> value)
 	{
-		Value = value;
+		ByteValue = value;
+		CharValue = ReadOnlyMemory<char>.Empty;
+		IsByteSequence = true;
+	}
+	public LabelSequence(ReadOnlyMemory<char> value)
+	{
+		ByteValue = default;
+		CharValue = value;
+		IsByteSequence = false;
+	}
+	public LabelSequence(string value) : this(value.AsMemory()) { }
+
+	public Enumerator GetEnumerator() => new(this);
+
+	public int GetSequentialByteLength()
+	{
+		var sequentialBytes = 0;
+		var hasPointer = false;
+		foreach (var label in this)
+		{
+			if (!label.FromPointerOffset)
+			{
+				//The "+1" is because each label starts with a number that dictates the length
+				sequentialBytes += label.Length + 1;
+				continue;
+			}
+
+			sequentialBytes += PointerLength;
+			hasPointer = true;
+			break;
+		}
+
+		if (!hasPointer)
+		{
+			//Add the final 0-length label byte - only for non-pointers
+			sequentialBytes += 1;
+		}
+		return sequentialBytes;
 	}
 
-	public LabelSequenceReader GetReader() => new(Value);
-
-	public void WriteTo(Span<byte> destination, out int bytesWritten)
+	public int GetSequenceByteLength()
 	{
-		GetReader().CountBytes(out bytesWritten, out _);
-		Value[..bytesWritten].CopyTo(destination);
+		var sequenceLength = 0;
+		foreach (var label in this)
+		{
+			//The "+1" is because each label starts with a number
+			sequenceLength += label.Length + 1;
+		}
+		//Add the final 0-length label byte
+		sequenceLength += 1;
+		return sequenceLength;
 	}
 
-	public override string ToString() => GetReader().ReadString();
+	public override string ToString()
+	{
+		if (!IsByteSequence)
+		{
+			return CharValue.ToString();
+		}
+		else
+		{
+			var builder = new StringBuilder();
+			var isNotFirst = false;
+			foreach (var label in this)
+			{
+				if (isNotFirst)
+				{
+					builder.Append('.');
+				}
 
-	public static LabelSequence Parse(SeekableReadOnlySpan<byte> value, out int bytesRead)
+				builder.Append(label.ToString());
+				isNotFirst = true;
+			}
+			return builder.ToString();
+		}
+	}
+
+	public static LabelSequence Parse(SeekableMemory<byte> value, out int bytesRead)
 	{
 		var sequence = new LabelSequence(value);
-		sequence.GetReader().CountBytes(out bytesRead, out _);
+		bytesRead = sequence.GetSequentialByteLength();
 		return sequence;
-	}
-
-	public static LabelSequence Parse(ReadOnlySpan<char> value)
-	{
-		var fullValue = value;
-		var buffer = new byte[value.Length + 2];
-		var bufferSlice = (Span<byte>)buffer;
-		var count = 0;
-		while (value.Length > 0)
-		{
-			count = value.IndexOf('.');
-			if (count == -1)
-			{
-				count = value.Length;
-			}
-			
-			var valueSlice = value[..count];
-			bufferSlice[0] = (byte)count;
-			bufferSlice = bufferSlice[1..];
-			Encoding.ASCII.GetBytes(value, bufferSlice);
-			bufferSlice = bufferSlice[count..];
-			value = value[count..];
-			if (value.Length > 0 && value[0] == '.')
-			{
-				value = value[1..];
-			}
-		}
-		bufferSlice[0] = 0;
-		return new LabelSequence(buffer.AsSpan());
 	}
 }

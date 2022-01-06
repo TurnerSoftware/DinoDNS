@@ -1,6 +1,6 @@
 ﻿namespace TurnerSoftware.DinoDNS.Protocol;
 
-public ref struct ResourceRecord
+public readonly struct ResourceRecord
 {
 	public readonly LabelSequence DomainName;
 	public readonly DnsType Type;
@@ -11,7 +11,7 @@ public ref struct ResourceRecord
 	public readonly uint TimeToLive;
 	public readonly ushort ResourceDataLength;
 
-	public readonly ReadOnlySpan<byte> Data;
+	public readonly ReadOnlyMemory<byte> Data;
 
 	public ResourceRecord(LabelSequence labelSequence, DnsType dnsType, DnsClass dnsClass, uint timeToLive)
 	{
@@ -20,10 +20,10 @@ public ref struct ResourceRecord
 		Class = dnsClass;
 		TimeToLive = timeToLive;
 		ResourceDataLength = 0;
-		Data = ReadOnlySpan<byte>.Empty;
+		Data = ReadOnlyMemory<byte>.Empty;
 	}
 
-	public ResourceRecord(LabelSequence labelSequence, DnsType dnsType, DnsClass dnsClass, uint timeToLive, ReadOnlySpan<byte> data)
+	public ResourceRecord(LabelSequence labelSequence, DnsType dnsType, DnsClass dnsClass, uint timeToLive, ReadOnlyMemory<byte> data)
 	{
 		DomainName = labelSequence;
 		Type = dnsType;
@@ -33,7 +33,7 @@ public ref struct ResourceRecord
 		Data = data;
 	}
 
-	public static ResourceRecord Parse(SeekableReadOnlySpan<byte> source, out int bytesRead)
+	public static ResourceRecord Parse(SeekableMemory<byte> source, out int bytesRead)
 	{
 		source
 			.ReadLabelSequence(out var labelSequence, out bytesRead)

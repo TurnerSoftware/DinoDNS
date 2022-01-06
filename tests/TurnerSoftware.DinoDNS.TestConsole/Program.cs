@@ -1,7 +1,6 @@
 ﻿using TurnerSoftware.DinoDNS;
 using TurnerSoftware.DinoDNS.Protocol;
 using System.Net.Sockets;
-using System.Text;
 
 Console.WriteLine(@"QDCOUNT: Question record count
 ANCOUNT: Answer record count
@@ -63,32 +62,31 @@ static async ValueTask RunClientAsync()
 	//remoteServer.Connect("1.1.1.1", 53);
 
 	byte[] buffer = new byte[1024];
-	WriteClientTestData(buffer);
+	var data = WriteClientTestData(buffer);
 
 	//Console.WriteLine("Request");
 	//WriteBytes(buffer.AsSpan()[..50]);
 
-	await remoteServer.SendAsync(buffer);
+	await remoteServer.SendAsync(data);
 	var remoteResult = await remoteServer.ReceiveAsync();
 	ProcessResponse(remoteResult.Buffer);
 
 
-	static void WriteClientTestData(Span<byte> buffer)
+	static ReadOnlyMemory<byte> WriteClientTestData(Memory<byte> destination)
 	{
-		var header = new Header
-		{
-			Identification = 1,
-			Flags = new HeaderFlags
+		var message = DnsMessage.CreateQuery(1, Opcode.Query, RecursionDesired.Yes)
+			.WithQuestions(new Question[]
 			{
-				QueryOrResponse = QueryOrResponse.Query,
-				RecursionDesired = RecursionDesired.Yes
-			},
-			QuestionRecordCount = 1,
-		};
-		header.WriteTo(buffer);
+				new()
+				{
+					Query = new LabelSequence("vortex.data.microsoft.com"),
+					Type = DnsQueryType.A,
+					Class = DnsClass.IN
+				}
+			});
 
-		var question = new Question(LabelSequence.Parse("vortex.data.microsoft.com"), DnsQueryType.A, DnsClass.IN);
-		question.WriteTo(buffer[12..], out _);
+		var writer = new DnsProtocolWriter(destination);
+		return writer.AppendMessage(message).GetWrittenBytes();
 	}
 }
 
@@ -112,25 +110,25 @@ static async ValueTask RunServerAsync()
 
 static void ProcessRequest(byte[] buffer)
 {
-	ReadOnlySpan<byte> span = buffer.AsSpan();
-	var header = new Header(span);
+	ReadOnlyMemory<byte> memory = buffer.AsMemory();
+	var header = new Header(memory.Span);
 
 	Console.WriteLine(header.ToString());
 
-	span = span[12..];
+	memory = memory[12..];
 	for (var i = 0; i < header.QuestionRecordCount; i++)
 	{
-		var question = Question.Parse(span, out var questionLength);
+		var question = Question.Parse(memory, out var questionLength);
 		Console.WriteLine(question.ToString());
-		span = span[questionLength..];
+		memory = memory[questionLength..];
 	}
 }
 
 static void ProcessResponse(byte[] buffer)
 {
-	SeekableReadOnlySpan<byte> seekableSpan = buffer.AsSpan();
+	SeekableMemory<byte> seekableSpan = buffer.AsMemory();
 
-	var header = new Header(seekableSpan);
+	var header = new Header(seekableSpan.Span);
 
 	Console.WriteLine(header.ToString());
 

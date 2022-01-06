@@ -16,13 +16,13 @@ public class LabelSequenceTests
 	public static IEnumerable<object[]> ReadLabelsData()
 	{
 		var buffer = ArrayPool<byte>.Shared.Rent(512);
-		var writer = new LabelSequenceWriter(buffer);
+		var writer = new DnsProtocolWriter(buffer);
 
-		var singleLabelData = writer.AppendLabel("localhost").EndSequence();
-		var multipleLabelData = writer.AppendLabel("example").AppendLabel("org").EndSequence();
+		var singleLabelData = writer.AppendLabel("localhost").EndLabelSequence();
+		var multipleLabelData = writer.AppendLabel("example").AppendLabel("org").EndLabelSequence();
 		var multipleLabelWithPointersData = writer
-				.AppendLabel("www").AppendLabel("example").AppendLabel("org").Append(0)
-				.AppendLabel("test").AppendLabel("site").AppendPointer(4).EndSequence();
+				.AppendLabel("www").AppendLabel("example").AppendLabel("org").AppendLabelSequenceEnd()
+				.AppendLabel("test").AppendLabel("site").AppendPointer(4).EndLabelSequence();
 
 		ArrayPool<byte>.Shared.Return(buffer);
 
@@ -54,18 +54,18 @@ public class LabelSequenceTests
 	public void ReadLabels(byte[] data, string expectedDomain, int offset, string testName)
 	{
 		var a = ReadLabelsData().ToArray();
-		var bytes = new SeekableReadOnlySpan<byte>(data.AsSpan()).Seek(offset);
-		var reader = LabelSequence.Parse(bytes, out _).GetReader();
+		var bytes = new SeekableMemory<byte>(data.AsMemory()).Seek(offset);
+		var enumerator = LabelSequence.Parse(bytes, out _).GetEnumerator();
 
 		var expectedLabels = expectedDomain.Split('.');
 		for (var i = 0; i < expectedLabels.Length; i++)
 		{
 			var expected = expectedLabels[i];
-			reader.Next(out var label, out _);
-			var result = Encoding.ASCII.GetString(label);
+			enumerator.MoveNext();
+			var result = enumerator.Current.ToString();
 			Assert.AreEqual(expected, result);
 		}
 
-		Assert.IsFalse(reader.Next(out _, out _), "Reader has more labels than expected");
+		Assert.IsFalse(enumerator.MoveNext(), "Reader has more labels than expected");
 	}
 }
