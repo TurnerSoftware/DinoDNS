@@ -4,11 +4,11 @@ namespace TurnerSoftware.DinoDNS.Protocol;
 
 public readonly partial struct LabelSequence
 {
-	private readonly SeekableMemory<byte> ByteValue;
+	private readonly SeekableReadOnlyMemory<byte> ByteValue;
 	private readonly ReadOnlyMemory<char> CharValue;
 	private readonly bool IsByteSequence;
 
-	public LabelSequence(SeekableMemory<byte> value)
+	public LabelSequence(SeekableReadOnlyMemory<byte> value)
 	{
 		ByteValue = value;
 		CharValue = ReadOnlyMemory<char>.Empty;
@@ -85,12 +85,5 @@ public readonly partial struct LabelSequence
 			}
 			return builder.ToString();
 		}
-	}
-
-	public static LabelSequence Parse(SeekableMemory<byte> value, out int bytesRead)
-	{
-		var sequence = new LabelSequence(value);
-		bytesRead = sequence.GetSequentialByteLength();
-		return sequence;
 	}
 }

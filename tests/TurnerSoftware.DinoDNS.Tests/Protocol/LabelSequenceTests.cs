@@ -2,9 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS.Tests.Protocol;
@@ -16,7 +14,7 @@ public class LabelSequenceTests
 	public static IEnumerable<object[]> ReadLabelsData()
 	{
 		var buffer = ArrayPool<byte>.Shared.Rent(512);
-		var writer = new DnsProtocolWriter(buffer);
+		var writer = new DnsProtocolWriter(buffer.AsMemory());
 
 		var singleLabelData = writer.AppendLabel("localhost").EndLabelSequence();
 		var multipleLabelData = writer.AppendLabel("example").AppendLabel("org").EndLabelSequence();
@@ -53,9 +51,8 @@ public class LabelSequenceTests
 	[DataTestMethod]
 	public void ReadLabels(byte[] data, string expectedDomain, int offset, string testName)
 	{
-		var a = ReadLabelsData().ToArray();
-		var bytes = new SeekableMemory<byte>(data.AsMemory()).Seek(offset);
-		var enumerator = LabelSequence.Parse(bytes, out _).GetEnumerator();
+		var bytes = new SeekableReadOnlyMemory<byte>(data.AsMemory()).Seek(offset);
+		var enumerator = new LabelSequence(bytes).GetEnumerator();
 
 		var expectedLabels = expectedDomain.Split('.');
 		for (var i = 0; i < expectedLabels.Length; i++)

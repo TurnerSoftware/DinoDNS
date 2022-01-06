@@ -110,45 +110,40 @@ static async ValueTask RunServerAsync()
 
 static void ProcessRequest(byte[] buffer)
 {
-	ReadOnlyMemory<byte> memory = buffer.AsMemory();
-	var header = new Header(memory.Span);
+	SeekableReadOnlyMemory<byte> memory = buffer.AsMemory();
+	var reader = new DnsProtocolReader(memory)
+		.ReadMessage(out var message);
 
-	Console.WriteLine(header.ToString());
+	Console.WriteLine(message.Header.ToString());
 
-	memory = memory[12..];
-	for (var i = 0; i < header.QuestionRecordCount; i++)
+	for (var i = 0; i < message.Questions.Length; i++)
 	{
-		var question = Question.Parse(memory, out var questionLength);
+		var question = message.Questions[i];
 		Console.WriteLine(question.ToString());
-		memory = memory[questionLength..];
 	}
 }
 
 static void ProcessResponse(byte[] buffer)
 {
-	SeekableMemory<byte> seekableSpan = buffer.AsMemory();
+	SeekableReadOnlyMemory<byte> memory = buffer.AsMemory();
+	var reader = new DnsProtocolReader(memory)
+		.ReadMessage(out var message);
 
-	var header = new Header(seekableSpan.Span);
-
-	Console.WriteLine(header.ToString());
-
-	seekableSpan += Header.Length;
+	Console.WriteLine(message.Header.ToString());
 
 	//Console.WriteLine("Response");
 	//WriteBytes(seekableSpan.Span);
 
-	for (var i = 0; i < header.QuestionRecordCount; i++)
+	for (var i = 0; i < message.Questions.Length; i++)
 	{
-		var question = Question.Parse(seekableSpan, out var questionLength);
+		var question = message.Questions[i];
 		Console.WriteLine(question.ToString());
-		seekableSpan += questionLength;
 	}
 
-	for (var i = 0; i < header.AnswerRecordCount; i++)
+	for (var i = 0; i < message.Answers.Length; i++)
 	{
-		var answer = ResourceRecord.Parse(seekableSpan, out var answerLength);
+		var answer = message.Answers[i];
 		Console.WriteLine(answer.ToString());
-		seekableSpan += answerLength;
 	}
 }
 

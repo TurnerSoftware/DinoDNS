@@ -16,16 +16,6 @@ public readonly record struct Header(
 {
 	public const int Length = 12;
 
-	public Header(ReadOnlySpan<byte> source) : this(
-		BinaryPrimitives.ReadUInt16BigEndian(source[..2]),
-		new HeaderFlags(source[2..4]),
-		BinaryPrimitives.ReadUInt16BigEndian(source[4..6]),
-		BinaryPrimitives.ReadUInt16BigEndian(source[6..8]),
-		BinaryPrimitives.ReadUInt16BigEndian(source[8..10]),
-		BinaryPrimitives.ReadUInt16BigEndian(source[10..12])
-	)
-	{ }
-
 	public override string ToString()
 	{
 		var flags = Flags.ToString();
@@ -79,11 +69,6 @@ public readonly record struct HeaderFlags(ushort Value)
 		get => (ResponseCode)(Value & 0b00000000_00001111);
 		init => Value = (ushort)(Value & ~0b00000000_00001111 | (int)value);
 	}
-
-	public HeaderFlags(ReadOnlySpan<byte> source) : this(
-		BinaryPrimitives.ReadUInt16BigEndian(source)
-	)
-	{ }
 
 	public override string ToString() => $"[{Convert.ToString(Value,2).PadLeft(16,'0')}/{QueryOrResponse},{Opcode},{AuthoritativeAnswer},{Truncation},{RecursionDesired},{RecursionAvailable},{Z},{ResponseCode}]";
 }

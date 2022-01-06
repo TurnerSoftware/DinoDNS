@@ -3,68 +3,70 @@ using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS;
 
-public ref struct DnsProtocolWriter
+public readonly struct DnsProtocolWriter
 {
-	public readonly Memory<byte> Destination;
-	public readonly int Offset;
+	public readonly SeekableMemory<byte> SeekableDestination;
 
-	public DnsProtocolWriter(Memory<byte> destination)
+	public DnsProtocolWriter(SeekableMemory<byte> destination)
 	{
-		Destination = destination;
-		Offset = 0;
-	}
-
-	private DnsProtocolWriter(Memory<byte> destination, int offset)
-	{
-		Destination = destination;
-		Offset = offset;
+		SeekableDestination = destination;
 	}
 
 	private DnsProtocolWriter Advance(int bytesWritten)
 	{
-		var newOffset = Offset + bytesWritten;
-		return new(Destination, newOffset);
+		return new(SeekableDestination.SeekRelative(bytesWritten));
 	}
 
-	private Span<byte> OffsetDestination => Destination[Offset..].Span;
+	public DnsProtocolWriter AppendByte(byte value)
+	{
+		SeekableDestination.Span[0] = value;
+		return Advance(sizeof(byte));
+	}
+	public DnsProtocolWriter AppendUInt16(ushort value)
+	{
+		BinaryPrimitives.WriteUInt16BigEndian(SeekableDestination.Span, value);
+		return Advance(sizeof(ushort));
+	}
+	public DnsProtocolWriter AppendUInt32(uint value)
+	{
+		BinaryPrimitives.WriteUInt32BigEndian(SeekableDestination.Span, value);
+		return Advance(sizeof(uint));
+	}
+	public DnsProtocolWriter AppendBytes(ReadOnlySpan<byte> value)
+	{
+		value.CopyTo(SeekableDestination.Span);
+		return Advance(value.Length);
+	}
 
 	public DnsProtocolWriter AppendHeader(Header header)
 	{
-		var destination = OffsetDestination;
-		BinaryPrimitives.WriteUInt16BigEndian(destination[..2], header.Identification);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[2..4], header.Flags.Value);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[4..6], header.QuestionRecordCount);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[6..8], header.AnswerRecordCount);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[8..10], header.AuthorityRecordCount);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[10..12], header.AdditionalRecordCount);
-		return Advance(Header.Length);
+		return AppendUInt16(header.Identification)
+			.AppendUInt16(header.Flags.Value)
+			.AppendUInt16(header.QuestionRecordCount)
+			.AppendUInt16(header.AnswerRecordCount)
+			.AppendUInt16(header.AuthorityRecordCount)
+			.AppendUInt16(header.AdditionalRecordCount);
 	}
 
 	public DnsProtocolWriter AppendQuestion(Question question)
 	{
-		var writer = AppendLabelSequence(question.Query);
-		var destination = writer.OffsetDestination;
-		BinaryPrimitives.WriteUInt16BigEndian(destination, (ushort)question.Type);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[2..], (ushort)question.Class);
-		return writer.Advance(4);
+		return AppendLabelSequence(question.Query)
+			.AppendUInt16((ushort)question.Type)
+			.AppendUInt16((ushort)question.Class);
 	}
 
-	public DnsProtocolWriter AppendPointer(ushort pointer)
+	public DnsProtocolWriter AppendPointer(ushort offset)
 	{
 		//Set the first 2-bits of the value to correctly encode the pointer before writing.
-		pointer |= 0b11000000_00000000;
-		var destination = OffsetDestination;
-		BinaryPrimitives.WriteUInt16BigEndian(destination, pointer);
-		return Advance(2);
+		offset |= 0b11000000_00000000;
+		return AppendUInt16(offset);
 	}
 
 	public DnsProtocolWriter AppendLabel(LabelSequence.Label label)
 	{
-		var destination = OffsetDestination;
 		var labelBytes = label.ToBytes();
-		destination[0] = (byte)labelBytes.Length;
-		labelBytes.CopyTo(destination[1..]);
-		return Advance(labelBytes.Length + 1);
+		return AppendByte((byte)labelBytes.Length)
+			.AppendBytes(labelBytes);
 	}
 
 	/// <summary>
@@ -87,24 +89,16 @@ public ref struct DnsProtocolWriter
 	/// This is automatically called from <see cref="WriteLabelSequence(LabelSequence)"/>.
 	/// </summary>
 	/// <returns></returns>
-	public DnsProtocolWriter AppendLabelSequenceEnd()
-	{
-		OffsetDestination[0] = 0;
-		return Advance(1);
-	}
+	public DnsProtocolWriter AppendLabelSequenceEnd() => AppendByte(0);
 
 	public DnsProtocolWriter AppendResourceRecord(ResourceRecord resourceRecord)
 	{
-		var writer = AppendLabelSequence(resourceRecord.DomainName);
-		var destination = writer.OffsetDestination;
-		BinaryPrimitives.WriteUInt16BigEndian(destination, (ushort)resourceRecord.Type);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[2..], (ushort)resourceRecord.Class);
-		BinaryPrimitives.WriteUInt32BigEndian(destination[4..], resourceRecord.TimeToLive);
-		BinaryPrimitives.WriteUInt16BigEndian(destination[8..], resourceRecord.ResourceDataLength);
-		var bytesWritten = 10;
-		resourceRecord.Data.Span.CopyTo(destination);
-		bytesWritten += resourceRecord.Data.Length;
-		return Advance(bytesWritten);
+		return AppendLabelSequence(resourceRecord.DomainName)
+			.AppendUInt16((ushort)resourceRecord.Type)
+			.AppendUInt16((ushort)resourceRecord.Class)
+			.AppendUInt32(resourceRecord.TimeToLive)
+			.AppendUInt16(resourceRecord.ResourceDataLength)
+			.AppendBytes(resourceRecord.Data.Span);
 	}
 
 	/// <summary>
@@ -151,5 +145,5 @@ public ref struct DnsProtocolWriter
 		return writer;
 	}
 
-	public ReadOnlyMemory<byte> GetWrittenBytes() => Destination[..Offset];
+	public ReadOnlyMemory<byte> GetWrittenBytes() => SeekableDestination.Source[..SeekableDestination.Offset];
 }
