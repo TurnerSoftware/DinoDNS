@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{A096D6
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StaticDnsServer", "benchmarks\StaticDnsServer\StaticDnsServer.csproj", "{7A163C84-5039-4973-B808-D4AFFCDA6DC0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +48,10 @@ Global
 		{11BED4F7-B487-40B4-AF1D-6E315B413006}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11BED4F7-B487-40B4-AF1D-6E315B413006}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11BED4F7-B487-40B4-AF1D-6E315B413006}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A163C84-5039-4973-B808-D4AFFCDA6DC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A163C84-5039-4973-B808-D4AFFCDA6DC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A163C84-5039-4973-B808-D4AFFCDA6DC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A163C84-5039-4973-B808-D4AFFCDA6DC0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -55,6 +61,7 @@ Global
 		{FFCA3CC3-927A-4CAF-A7E3-EACEAAEE531F} = {8E433D5C-5DDB-4486-85F9-03299A9DB172}
 		{37EAF37C-900F-4B30-90F8-37C420EB74ED} = {8E433D5C-5DDB-4486-85F9-03299A9DB172}
 		{11BED4F7-B487-40B4-AF1D-6E315B413006} = {593D09FA-7858-4252-AD34-DFA52F8C0BB8}
+		{7A163C84-5039-4973-B808-D4AFFCDA6DC0} = {593D09FA-7858-4252-AD34-DFA52F8C0BB8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A5B49E2E-EBD4-4D11-AA46-DB1401B23880}
