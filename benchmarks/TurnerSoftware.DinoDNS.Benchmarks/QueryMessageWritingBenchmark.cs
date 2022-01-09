@@ -6,10 +6,9 @@ namespace TurnerSoftware.DinoDNS.Benchmarks;
 
 [Config(typeof(CustomConfig))]
 [SimpleJob(RuntimeMoniker.Net60)]
-[MemoryDiagnoser]
 public class QueryMessageWritingBenchmark
 {
-	private byte[] Buffer = new byte[1024];
+	private readonly byte[] Buffer = new byte[1024];
 
 	private DnsMessage DinoDNS_Message;
 	private DNS.Protocol.Request? DNS_Request;

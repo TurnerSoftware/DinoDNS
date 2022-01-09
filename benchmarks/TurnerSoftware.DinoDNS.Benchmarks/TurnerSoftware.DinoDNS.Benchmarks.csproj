@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TurnerSoftware.DinoDNS\TurnerSoftware.DinoDNS.csproj" />
+    <ProjectReference Include="..\StaticDnsServer\StaticDnsServer.csproj" />
   </ItemGroup>
 
 </Project>

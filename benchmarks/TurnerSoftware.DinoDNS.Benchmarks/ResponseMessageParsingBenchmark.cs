@@ -6,7 +6,6 @@ namespace TurnerSoftware.DinoDNS.Benchmarks;
 
 [Config(typeof(CustomConfig))]
 [SimpleJob(RuntimeMoniker.Net60)]
-[MemoryDiagnoser]
 public class ResponseMessageParsingBenchmark
 {
 	private byte[]? Message;
