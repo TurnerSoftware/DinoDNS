@@ -7,9 +7,10 @@ public readonly record struct UdpMessenger(IPEndPoint Endpoint) : IDnsMessenger
 {
 	public async ValueTask<MessengerResult> SendMessageAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
 	{
-		using var client = new UdpClient();
-		await client.SendAsync(sourceBuffer, Endpoint, cancellationToken);
-		var bytesReceived = await client.Client.ReceiveAsync(destinationBuffer, SocketFlags.None, cancellationToken);
+		using var socket = new Socket(Endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+		await socket.ConnectAsync(Endpoint);
+		await socket.SendAsync(sourceBuffer, SocketFlags.None, cancellationToken);
+		var bytesReceived = await socket.ReceiveAsync(destinationBuffer, SocketFlags.None, cancellationToken);
 		return new(bytesReceived, 0);
 	}
 }
