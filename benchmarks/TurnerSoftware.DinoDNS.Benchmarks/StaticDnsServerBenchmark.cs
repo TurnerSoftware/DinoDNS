@@ -9,7 +9,7 @@ namespace TurnerSoftware.DinoDNS.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net60)]
 public class StaticDnsServerBenchmark
 {
-	private UdpClient? UdpClient;
+	private Socket? Socket;
 
 	private readonly IPEndPoint EndPoint = new(new IPAddress(new byte[] { 127, 0, 0, 1 }), 53);
 	private readonly byte[] Source = new byte[1] { 0 };
@@ -18,7 +18,7 @@ public class StaticDnsServerBenchmark
 	[GlobalSetup]
 	public void Setup()
 	{
-		UdpClient = new UdpClient();
+		Socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 		TestServer.Start();
 	}
 
@@ -31,7 +31,7 @@ public class StaticDnsServerBenchmark
 	[Benchmark(Baseline = true)]
 	public void StaticDnsServer()
 	{
-		UdpClient!.Send(Source, EndPoint);
-		UdpClient.Client.Receive(Destination!);
+		Socket!.SendTo(Source, EndPoint);
+		Socket.Receive(Destination);
 	}
 }
