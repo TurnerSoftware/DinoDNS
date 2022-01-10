@@ -12,7 +12,6 @@ namespace TurnerSoftware.DinoDNS.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net60)]
 public class FullStackBenchmark
 {
-	private Process? TestServerProcess;
 	private byte[]? RawMessage;
 
 	private DnsClient? DinoDNS_DnsClient;
@@ -51,16 +50,13 @@ public class FullStackBenchmark
 		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(testEndpoint);
 		Kapetan_DNS_ClientRequest = Kapetan_DNS_DnsClient.FromArray(RawMessage);
 
-		TestServerProcess = Process.Start(new ProcessStartInfo("StaticDnsServer.exe"));
+		TestServer.Start();
 	}
 
 	[GlobalCleanup]
 	public void Cleanup()
 	{
-		if (TestServerProcess is not null && !TestServerProcess.HasExited)
-		{
-			TestServerProcess.Kill();
-		}
+		TestServer.Stop();
 	}
 
 
@@ -70,9 +66,9 @@ public class FullStackBenchmark
 		return await DinoDNS_DnsClient!.SendAsync(DinoDNS_Message);
 	}
 
-	//[Benchmark]
-	//public async Task<DNS.Protocol.IResponse> Kapetan_DNS()
-	//{
-	//	return await Kapetan_DNS_ClientRequest!.Resolve();
-	//}
+	[Benchmark]
+	public async Task<DNS.Protocol.IResponse> Kapetan_DNS()
+	{
+		return await Kapetan_DNS_ClientRequest!.Resolve();
+	}
 }
