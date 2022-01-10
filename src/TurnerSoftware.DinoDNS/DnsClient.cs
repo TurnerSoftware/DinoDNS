@@ -33,7 +33,7 @@ public class DnsClient
 		for (var i = 0; i < Messengers.Length; i++)
 		{
 			var messenger = Messengers[i];
-			var result = await messenger.SendMessageAsync(sourceBuffer, destinationBuffer, cancellationToken);
+			var result = await messenger.SendMessageAsync(sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
 			return result.BytesReceived;
 		}
 		throw new Exception("Uh oh");
@@ -50,7 +50,7 @@ public class DnsClient
 		var destinationMemory = destinationBuffer.AsMemory();
 
 		var writer = new DnsProtocolWriter(sourceMemory).AppendMessage(message);
-		var bytesReceived = await SendAsync(sourceMemory, destinationMemory, cancellationToken);
+		var bytesReceived = await SendAsync(sourceMemory, destinationMemory, cancellationToken).ConfigureAwait(false);
 
 		var reader = new DnsProtocolReader(destinationMemory[..bytesReceived]);
 		reader.ReadMessage(out var receivedMessage);
