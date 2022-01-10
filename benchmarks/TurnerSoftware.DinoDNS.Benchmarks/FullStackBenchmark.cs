@@ -1,7 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
-using System.Diagnostics;
 using System.Net;
 using TurnerSoftware.DinoDNS.Messengers;
 using TurnerSoftware.DinoDNS.Protocol;
@@ -19,6 +17,9 @@ public class FullStackBenchmark
 
 	private DNS.Client.DnsClient? Kapetan_DNS_DnsClient;
 	private DNS.Client.ClientRequest? Kapetan_DNS_ClientRequest;
+
+	private global::DnsClient.LookupClient? MichaCo_DnsClient_LookupClient;
+	private global::DnsClient.DnsQuestion? MichaCo_DnsClient_DnsQuestion;
 
 	[GlobalSetup]
 	public void Setup()
@@ -50,6 +51,12 @@ public class FullStackBenchmark
 		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(testEndpoint);
 		Kapetan_DNS_ClientRequest = Kapetan_DNS_DnsClient.FromArray(RawMessage);
 
+		MichaCo_DnsClient_LookupClient = new global::DnsClient.LookupClient(new global::DnsClient.LookupClientOptions(testEndpoint)
+		{
+			UseCache = false
+		});
+		MichaCo_DnsClient_DnsQuestion = new global::DnsClient.DnsQuestion("test.www.example.org", global::DnsClient.QueryType.A);
+
 		TestServer.Start();
 	}
 
@@ -70,5 +77,11 @@ public class FullStackBenchmark
 	public async Task<DNS.Protocol.IResponse> Kapetan_DNS()
 	{
 		return await Kapetan_DNS_ClientRequest!.Resolve();
+	}
+
+	[Benchmark]
+	public async Task<global::DnsClient.IDnsQueryResponse> MichaCo_DnsClient()
+	{
+		return await MichaCo_DnsClient_LookupClient!.QueryAsync(MichaCo_DnsClient_DnsQuestion);
 	}
 }
