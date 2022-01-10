@@ -90,6 +90,17 @@ public readonly partial struct LabelSequence
 			return result;
 		}
 
+		public int ToBytes(Span<byte> destination)
+		{
+			if (!ByteValue.IsEmpty)
+			{
+				ByteValue.Span.CopyTo(destination);
+				return ByteValue.Length;
+			}
+
+			return Encoding.ASCII.GetBytes(CharValue.Span, destination);
+		}
+
 		public override string ToString()
 		{
 			if (!CharValue.IsEmpty)
@@ -102,6 +113,17 @@ public readonly partial struct LabelSequence
 			}
 
 			return string.Empty;
+		}
+
+		public int ToString(Span<char> destination)
+		{
+			if (!CharValue.IsEmpty)
+			{
+				CharValue.Span.CopyTo(destination);
+				return CharValue.Length;
+			}
+
+			return Encoding.ASCII.GetChars(ByteValue.Span, destination);
 		}
 
 		public static implicit operator Label(string source) => new(source.AsMemory());

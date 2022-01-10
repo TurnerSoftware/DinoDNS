@@ -64,9 +64,10 @@ public readonly struct DnsProtocolWriter
 
 	public DnsProtocolWriter AppendLabel(LabelSequence.Label label)
 	{
-		var labelBytes = label.ToBytes();
-		return AppendByte((byte)labelBytes.Length)
-			.AppendBytes(labelBytes);
+		Span<byte> buffer = stackalloc byte[LabelSequence.Label.MaxLength];
+		var bytesEncoded = label.ToBytes(buffer);
+		return AppendByte((byte)bytesEncoded)
+			.AppendBytes(buffer[..bytesEncoded]);
 	}
 
 	/// <summary>
