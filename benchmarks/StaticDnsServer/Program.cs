@@ -3,7 +3,6 @@ using System.Net.Sockets;
 using TurnerSoftware.DinoDNS;
 using TurnerSoftware.DinoDNS.Protocol;
 
-const int DEFAULT_DNS_SERVER_PORT = 53;
 const int TIMEOUT_IN_SECONDS = 8;
 
 Console.WriteLine("Full Stack DNS Benchmark Server");
@@ -11,28 +10,32 @@ Console.WriteLine("===============================");
 Console.WriteLine("This is designed to respond as fast as possible with a static payload for a DNS query.");
 Console.WriteLine($"This server will end within {TIMEOUT_IN_SECONDS} seconds of the last request.");
 
-using var udpClient = new UdpClient(DEFAULT_DNS_SERVER_PORT);
-var endpoint = new IPEndPoint(0, 0);
-var cancellationSource = new CancellationTokenSource();
-cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
-
-var exampleData = GenerateExampleData();
-
-Console.WriteLine("Now listening for DNS requests...");
-
 try
 {
-	while (true)
-	{
-		var result = await udpClient.ReceiveAsync(cancellationSource.Token);
-		udpClient.Send(exampleData.Span, result.RemoteEndPoint);
-		cancellationSource = new CancellationTokenSource();
-		cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
-	}
+	await RunUdpServerAsync();
 }
 catch (OperationCanceledException)
 {
 	Console.WriteLine("Benchmark server has ended.");
+}
+
+static async ValueTask RunUdpServerAsync()
+{
+	Console.WriteLine("UDP server started!");
+	var exampleData = GenerateExampleData();
+	var cancellationSource = new CancellationTokenSource();
+	cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
+
+	var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+	socket.Bind(Statics.ENDPOINT);
+	var buffer = new byte[1024].AsMemory();
+	while (true)
+	{
+		var result = await socket.ReceiveFromAsync(buffer, SocketFlags.None, Statics.ENDPOINT, cancellationSource.Token);
+		socket.SendTo(exampleData.Span, result.RemoteEndPoint);
+		cancellationSource = new CancellationTokenSource();
+		cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
+	}
 }
 
 static ReadOnlyMemory<byte> GenerateExampleData()
@@ -68,4 +71,10 @@ static ReadOnlyMemory<byte> GenerateExampleData()
 		.GetWrittenBytes()
 		.ToArray();
 	return messageBytes;
+}
+
+public static class Statics
+{
+	public const int DEFAULT_DNS_SERVER_PORT = 53;
+	public readonly static IPEndPoint ENDPOINT = new(IPAddress.Any, DEFAULT_DNS_SERVER_PORT);
 }
