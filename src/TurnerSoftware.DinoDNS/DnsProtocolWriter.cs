@@ -111,36 +111,24 @@ public readonly struct DnsProtocolWriter
 	{
 		var writer = AppendHeader(message.Header);
 
-		if (message.Questions is not null)
+		foreach (var question in message.Questions)
 		{
-			foreach (var question in message.Questions)
-			{
-				writer = writer.AppendQuestion(question);
-			}
+			writer = writer.AppendQuestion(question);
 		}
 
-		if (message.Answers is not null)
+		foreach (var answer in message.Answers)
 		{
-			foreach (var answer in message.Answers)
-			{
-				writer = writer.AppendResourceRecord(answer);
-			}
+			writer = writer.AppendResourceRecord(answer);
 		}
 
-		if (message.Authorities is not null)
+		foreach (var authority in message.Authorities)
 		{
-			foreach (var authority in message.Authorities)
-			{
-				writer = writer.AppendResourceRecord(authority);
-			}
+			writer = writer.AppendResourceRecord(authority);
 		}
 
-		if (message.AdditionalRecords is not null)
+		foreach (var additionalRecord in message.AdditionalRecords)
 		{
-			foreach (var additionalRecord in message.AdditionalRecords)
-			{
-				writer = writer.AppendResourceRecord(additionalRecord);
-			}
+			writer = writer.AppendResourceRecord(additionalRecord);
 		}
 
 		return writer;

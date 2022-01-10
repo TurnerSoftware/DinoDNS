@@ -69,6 +69,19 @@ public readonly struct DnsProtocolReader
 		return reader;
 	}
 
+	public DnsProtocolReader ReadQuestionCollection(out QuestionCollection questions, int itemCount)
+	{
+		var reader = this;
+		questions = new QuestionCollection(SeekableSource, itemCount);
+
+		//Move the reader ahead by an equal number of questions
+		for (var i = 0; i < itemCount; i++)
+		{
+			reader = reader.ReadQuestion(out _);
+		}
+		return reader;
+	}
+
 	public DnsProtocolReader ReadLabelSequence(out LabelSequence labelSequence)
 	{
 		labelSequence = new LabelSequence(SeekableSource);
@@ -96,6 +109,19 @@ public readonly struct DnsProtocolReader
 		return reader;
 	}
 
+	public DnsProtocolReader ReadResourceRecordCollection(out ResourceRecordCollection resourceRecords, int itemCount)
+	{
+		var reader = this;
+		resourceRecords = new ResourceRecordCollection(SeekableSource, itemCount);
+
+		//Move the reader ahead by an equal number of resource records
+		for (var i = 0; i < itemCount; i++)
+		{
+			reader = reader.ReadResourceRecord(out _);
+		}
+		return reader;
+	}
+
 	/// <summary>
 	/// This performs no message compression.
 	/// </summary>
@@ -103,56 +129,13 @@ public readonly struct DnsProtocolReader
 	/// <returns></returns>
 	public DnsProtocolReader ReadMessage(out DnsMessage message)
 	{
-		var reader = ReadHeader(out var header);
+		var reader = ReadHeader(out var header)
+			.ReadQuestionCollection(out var questions, header.QuestionRecordCount)
+			.ReadResourceRecordCollection(out var answers, header.AnswerRecordCount)
+			.ReadResourceRecordCollection(out var authorities, header.AuthorityRecordCount)
+			.ReadResourceRecordCollection(out var additionalRecords, header.AdditionalRecordCount);
 
-		var questions = new Question[header.QuestionRecordCount];
-		for (var i = 0; i < questions.Length; i++)
-		{
-			reader = reader.ReadQuestion(out var question);
-			questions[i] = question;
-		}
-
-		ResourceRecord[]? answers = null;
-		if (header.AnswerRecordCount > 0)
-		{
-			answers = new ResourceRecord[header.AnswerRecordCount];
-			for (var i = 0; i < answers.Length; i++)
-			{
-				reader = reader.ReadResourceRecord(out var record);
-				answers[i] = record;
-			}
-		}
-
-		ResourceRecord[]? authorities = null;
-		if (header.AuthorityRecordCount > 0)
-		{
-			authorities = new ResourceRecord[header.AuthorityRecordCount];
-			for (var i = 0; i < authorities.Length; i++)
-			{
-				reader = reader.ReadResourceRecord(out var record);
-				authorities[i] = record;
-			}
-		}
-
-		ResourceRecord[]? additionalRecords = null;
-		if (header.AdditionalRecordCount > 0)
-		{
-			additionalRecords = new ResourceRecord[header.AdditionalRecordCount];
-			for (var i = 0; i < additionalRecords.Length; i++)
-			{
-				reader = reader.ReadResourceRecord(out var record);
-				additionalRecords[i] = record;
-			}
-		}
-
-		message = new DnsMessage(
-			header,
-			questions,
-			answers ?? Array.Empty<ResourceRecord>(),
-			authorities ?? Array.Empty<ResourceRecord>(),
-			additionalRecords ?? Array.Empty<ResourceRecord>()
-		);
-
+		message = new DnsMessage(header, questions, answers, authorities, additionalRecords);
 		return reader;
 	}
 }

@@ -57,8 +57,6 @@ public readonly partial struct LabelSequence
 				//The first two bits say whether it is a pointer or not.
 				//The next 14 bits represent the offset from the beginning of the message.
 				var offset = BinaryPrimitives.ReadUInt16BigEndian(seekableMemory) & 0b00111111_11111111;
-				// It seems that the ByteValue isn't actually the full segment of memory
-				// The logic here is actually probably fine, something else is cropping the data
 				seekableMemory = seekableMemory.Seek(offset);
 				countOrPointer = seekableMemory.Current;
 				fromPointer = true;

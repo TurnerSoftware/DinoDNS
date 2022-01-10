@@ -2,10 +2,10 @@
 
 public readonly record struct DnsMessage(
 	Header Header, 
-	Question[] Questions,
-	ResourceRecord[] Answers,
-	ResourceRecord[] Authorities,
-	ResourceRecord[] AdditionalRecords
+	QuestionCollection Questions,
+	ResourceRecordCollection Answers,
+	ResourceRecordCollection Authorities,
+	ResourceRecordCollection AdditionalRecords
 )
 {
 	public static DnsMessage CreateQuery(
