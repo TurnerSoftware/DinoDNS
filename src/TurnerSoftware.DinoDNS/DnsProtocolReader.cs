@@ -69,6 +69,8 @@ public readonly struct DnsProtocolReader
 		return reader;
 	}
 
+	public DnsProtocolReader SkipQuestion() => SkipLabelSequence().Advance(4);
+
 	public DnsProtocolReader ReadQuestionCollection(out QuestionCollection questions, int itemCount)
 	{
 		var reader = this;
@@ -77,7 +79,7 @@ public readonly struct DnsProtocolReader
 		//Move the reader ahead by an equal number of questions
 		for (var i = 0; i < itemCount; i++)
 		{
-			reader = reader.ReadQuestion(out _);
+			reader = reader.SkipQuestion();
 		}
 		return reader;
 	}
@@ -86,6 +88,11 @@ public readonly struct DnsProtocolReader
 	{
 		labelSequence = new LabelSequence(SeekableSource);
 		return Advance(labelSequence.GetSequentialByteLength());
+	}
+
+	public DnsProtocolReader SkipLabelSequence()
+	{
+		return Advance(new LabelSequence(SeekableSource).GetSequentialByteLength());
 	}
 
 	public DnsProtocolReader ReadResourceRecord(out ResourceRecord resourceRecord)
@@ -108,6 +115,10 @@ public readonly struct DnsProtocolReader
 
 		return reader;
 	}
+	public DnsProtocolReader SkipResourceRecord() => SkipLabelSequence()
+		.Advance(8)
+		.ReadUInt16(out var resourceDataLength)
+		.Advance(resourceDataLength);
 
 	public DnsProtocolReader ReadResourceRecordCollection(out ResourceRecordCollection resourceRecords, int itemCount)
 	{
@@ -117,16 +128,11 @@ public readonly struct DnsProtocolReader
 		//Move the reader ahead by an equal number of resource records
 		for (var i = 0; i < itemCount; i++)
 		{
-			reader = reader.ReadResourceRecord(out _);
+			reader = reader.SkipResourceRecord();
 		}
 		return reader;
 	}
 
-	/// <summary>
-	/// This performs no message compression.
-	/// </summary>
-	/// <param name="message"></param>
-	/// <returns></returns>
 	public DnsProtocolReader ReadMessage(out DnsMessage message)
 	{
 		var reader = ReadHeader(out var header)

@@ -1,11 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS.Benchmarks;
 
-[Config(typeof(CustomConfig))]
-[SimpleJob(RuntimeMoniker.Net60)]
+[Config(typeof(DefaultBenchmarkConfig))]
 public class QueryMessageWritingBenchmark
 {
 	private readonly byte[] Buffer = new byte[1024];

@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using System.Numerics;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+using System.Text;
 
 namespace TurnerSoftware.DinoDNS.Protocol;
 
@@ -24,29 +27,78 @@ public readonly partial struct LabelSequence
 
 	public Enumerator GetEnumerator() => new(this);
 
-	public int GetSequentialByteLength()
+	public unsafe int GetSequentialByteLength()
 	{
 		var sequentialBytes = 0;
-		var hasPointer = false;
-		foreach (var label in this)
+
+		if (Avx2.IsSupported)
 		{
-			if (!label.FromPointerOffset)
+			var labelPointer = Vector256.Create((byte)(PointerFlagByte - 1));
+			var endOfLabel = Vector256<byte>.Zero;
+
+			fixed (byte* fixedBytePtr = ByteValue.Span)
 			{
-				//The "+1" is because each label starts with a number that dictates the length
-				sequentialBytes += label.Length + 1;
-				continue;
+				var index = 0;
+				while (index < ByteValue.Span.Length)
+				{
+					var bytePtr = fixedBytePtr;
+					var data = Avx.LoadVector256(bytePtr);
+					var endLabelIndex = BitOperations.TrailingZeroCount(
+						(uint)Avx2.MoveMask(
+							Avx2.CompareEqual(endOfLabel, data)
+						)
+					);
+					var labelPointerIndex = BitOperations.TrailingZeroCount(
+						(uint)Avx2.MoveMask(
+							Avx2.CompareEqual(
+								labelPointer,
+								Avx2.Max(labelPointer, data)
+							)
+						) ^ uint.MaxValue
+					);
+
+					if (endLabelIndex == Vector256<byte>.Count && labelPointerIndex == Vector256<byte>.Count)
+					{
+						index += Vector256<byte>.Count;
+						sequentialBytes += Vector256<byte>.Count;
+					}
+					else if (endLabelIndex < labelPointerIndex)
+					{
+						sequentialBytes += endLabelIndex + 1;
+						break;
+					}
+					else
+					{
+						sequentialBytes += labelPointerIndex + PointerLength;
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			var hasPointer = false;
+			foreach (var label in this)
+			{
+				if (!label.FromPointerOffset)
+				{
+					//The "+1" is because each label starts with a number that dictates the length
+					sequentialBytes += label.Length + 1;
+					continue;
+				}
+
+				sequentialBytes += PointerLength;
+				hasPointer = true;
+				break;
 			}
 
-			sequentialBytes += PointerLength;
-			hasPointer = true;
-			break;
+			if (!hasPointer)
+			{
+				//Add the final 0-length label byte - only for non-pointers
+				sequentialBytes += 1;
+			}
 		}
 
-		if (!hasPointer)
-		{
-			//Add the final 0-length label byte - only for non-pointers
-			sequentialBytes += 1;
-		}
 		return sequentialBytes;
 	}
 

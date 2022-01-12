@@ -5,8 +5,7 @@ using System.Net.Sockets;
 
 namespace TurnerSoftware.DinoDNS.Benchmarks;
 
-[Config(typeof(CustomConfig))]
-[SimpleJob(RuntimeMoniker.Net60)]
+[Config(typeof(DefaultBenchmarkConfig))]
 public class StaticDnsServerBenchmark
 {
 	private Socket? Socket;

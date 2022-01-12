@@ -8,7 +8,7 @@ using TurnerSoftware.DinoDNS.Protocol;
 namespace TurnerSoftware.DinoDNS.Tests.Protocol;
 
 [TestClass]
-public class LabelSequenceTests
+public class LabelSequenceEnumeratorTests
 {
 	public static string ReadLabelsDataNames(MethodInfo _, object[] data) => data[^1].ToString()!;
 	public static IEnumerable<object[]> ReadLabelsData()

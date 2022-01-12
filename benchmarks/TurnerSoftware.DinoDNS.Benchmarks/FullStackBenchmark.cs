@@ -1,13 +1,11 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using System.Net;
 using TurnerSoftware.DinoDNS.Messengers;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS.Benchmarks;
 
-[Config(typeof(CustomConfig))]
-[SimpleJob(RuntimeMoniker.Net60)]
+[Config(typeof(DefaultBenchmarkConfig))]
 public class FullStackBenchmark
 {
 	private byte[]? RawMessage;
