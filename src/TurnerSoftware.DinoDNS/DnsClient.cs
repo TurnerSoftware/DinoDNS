@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Net.Sockets;
 using TurnerSoftware.DinoDNS.Messengers;
 using TurnerSoftware.DinoDNS.Protocol;
 
@@ -27,16 +28,40 @@ public class DnsClient
 
 	public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
 	{
-		//TODO: Handle socket exceptions
-		//		Handle typed-errors
-		//		Handle truncation
 		for (var i = 0; i < Messengers.Length; i++)
 		{
-			var messenger = Messengers[i];
-			var result = await messenger.SendMessageAsync(sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
-			return result.BytesReceived;
+			try
+			{
+				var messenger = Messengers[i];
+				var bytesReceived = await messenger.SendMessageAsync(sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
+
+				//Check truncation, falling back to the next configured messenger
+				new DnsProtocolReader(destinationBuffer).ReadHeader(out var header);
+				if (header.Flags.Truncation == Truncation.Yes)
+				{
+					continue;
+				}
+
+				switch (header.Flags.ResponseCode)
+				{
+					case ResponseCode.SERVFAIL:
+					case ResponseCode.NOTIMP:
+					case ResponseCode.REFUSED:
+						continue;
+					case ResponseCode.FORMERR:
+						throw new FormatException("Name server responded with a Format Error");
+				}
+
+				return bytesReceived;
+			}
+			catch (SocketException ex) when (ex.SocketErrorCode is SocketError.ConnectionReset or SocketError.ConnectionAborted)
+			{
+				//Allow certain types of socket errors to silently continue to the next messenger.
+				continue;
+			}
 		}
-		throw new Exception("Uh oh");
+
+		throw new Exception("Unable to communicate with ");
 	}
 
 	public async ValueTask<DnsMessage> SendAsync(DnsMessage message, CancellationToken cancellationToken = default)

@@ -2,5 +2,5 @@
 
 public interface IDnsMessenger
 {
-	ValueTask<MessengerResult> SendMessageAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken);
+	ValueTask<int> SendMessageAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken);
 }
