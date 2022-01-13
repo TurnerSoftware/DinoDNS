@@ -29,12 +29,14 @@ public class LabelSequenceLengthTests
 			singleLabelData,
 			0,
 			11,
+			11,
 			"Single Label"
 		};
-		yield return new object[] 
+		yield return new object[]
 		{
 			multipleLabelData,
 			0,
+			13,
 			13,
 			"Multiple Label"
 		};
@@ -43,19 +45,32 @@ public class LabelSequenceLengthTests
 			multipleLabelWithPointersData,
 			17,
 			12,
+			23,
 			"Multiple Label with Pointers"
 		};
 	}
 
 	[DynamicData(nameof(LabelSequenceData), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(LabelSequenceDataNames))]
 	[DataTestMethod]
-	public void SequentialBytes(byte[] data, int offset, int expectedBytes, string testName)
+	public void SequentialBytes(byte[] data, int offset, int sequentialExpectedBytes, int sequenceExpectedBytes, string testName)
 	{
 		var bytes = new SeekableReadOnlyMemory<byte>(data.AsMemory()).Seek(offset);
 		var sequence = new LabelSequence(bytes);
 
 		var result = sequence.GetSequentialByteLength();
 
-		Assert.AreEqual(expectedBytes, result);
+		Assert.AreEqual(sequentialExpectedBytes, result);
+	}
+
+	[DynamicData(nameof(LabelSequenceData), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(LabelSequenceDataNames))]
+	[DataTestMethod]
+	public void SequenceBytes(byte[] data, int offset, int sequentialExpectedBytes, int sequenceExpectedBytes, string testName)
+	{
+		var bytes = new SeekableReadOnlyMemory<byte>(data.AsMemory()).Seek(offset);
+		var sequence = new LabelSequence(bytes);
+
+		var result = sequence.GetSequenceByteLength();
+
+		Assert.AreEqual(sequenceExpectedBytes, result);
 	}
 }
