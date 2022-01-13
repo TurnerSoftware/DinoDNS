@@ -49,8 +49,8 @@ public class DnsClient
 		var sourceMemory = sourceBuffer.AsMemory(); ;
 		var destinationMemory = destinationBuffer.AsMemory();
 
-		var writer = new DnsProtocolWriter(sourceMemory).AppendMessage(message);
-		var bytesReceived = await SendAsync(sourceMemory, destinationMemory, cancellationToken).ConfigureAwait(false);
+		var writtenBytes = new DnsProtocolWriter(sourceMemory).AppendMessage(message).GetWrittenBytes();
+		var bytesReceived = await SendAsync(writtenBytes, destinationMemory, cancellationToken).ConfigureAwait(false);
 
 		var reader = new DnsProtocolReader(destinationMemory[..bytesReceived]);
 		reader.ReadMessage(out var receivedMessage);
