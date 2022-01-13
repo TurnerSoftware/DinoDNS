@@ -44,7 +44,7 @@ public readonly partial struct LabelSequence
 		{
 			if (!ByteValue.IsEmpty)
 			{
-				Span<byte> buffer = stackalloc byte[63];
+				Span<byte> buffer = stackalloc byte[MaxLength];
 				var asciiBytes = Encoding.ASCII.GetBytes(other, buffer);
 				return ByteValue.Span.SequenceEqual(buffer[..asciiBytes]);
 			}
@@ -56,7 +56,7 @@ public readonly partial struct LabelSequence
 		{
 			if (!CharValue.IsEmpty)
 			{
-				Span<byte> buffer = stackalloc byte[63];
+				Span<byte> buffer = stackalloc byte[MaxLength];
 				var asciiBytes = Encoding.ASCII.GetBytes(CharValue.Span, buffer);
 				return buffer[..asciiBytes].SequenceEqual(other);
 			}

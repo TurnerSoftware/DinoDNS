@@ -108,6 +108,8 @@ public readonly struct DnsProtocolWriter
 	public DnsProtocolWriter AppendLabelSequence(LabelSequence labelSequence)
 	{
 		var writer = this;
+		//We can't use the Label Sequence ByteValue directly because we don't know if it contains a pointer.
+		//This is a problem as the pointer may not be intended to match the written data.
 		foreach (var label in labelSequence)
 		{
 			writer = writer.AppendLabel(label);
@@ -117,7 +119,7 @@ public readonly struct DnsProtocolWriter
 
 	/// <summary>
 	/// Writes the NUL value, ending a label sequence.
-	/// This is automatically called from <see cref="WriteLabelSequence(LabelSequence)"/>.
+	/// This is automatically called from <see cref="AppendLabelSequence(LabelSequence)"/>.
 	/// </summary>
 	/// <returns></returns>
 	public DnsProtocolWriter AppendLabelSequenceEnd() => AppendByte(0);
