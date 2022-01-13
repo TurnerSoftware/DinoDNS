@@ -91,12 +91,13 @@ public readonly struct DnsProtocolWriter
 		return AppendUInt16(offset);
 	}
 
-	public DnsProtocolWriter AppendLabel(LabelSequence.Label label)
+	public unsafe DnsProtocolWriter AppendLabel(LabelSequence.Label label)
 	{
-		Span<byte> buffer = stackalloc byte[LabelSequence.Label.MaxLength];
-		var bytesEncoded = label.ToBytes(buffer);
-		return AppendByte((byte)bytesEncoded)
-			.AppendBytes(buffer[..bytesEncoded]);
+		var bytesWritten = (byte)label.ToBytes(
+			SeekableDestination.Span[1..]
+		);
+		SeekableDestination.Span[0] = bytesWritten;
+		return Advance(1 + bytesWritten);
 	}
 
 	/// <summary>
