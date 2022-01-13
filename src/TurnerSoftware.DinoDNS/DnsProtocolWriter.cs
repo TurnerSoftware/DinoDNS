@@ -1,4 +1,7 @@
 ﻿using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS;
@@ -38,14 +41,40 @@ public readonly struct DnsProtocolWriter
 		return Advance(value.Length);
 	}
 
-	public DnsProtocolWriter AppendHeader(Header header)
+	public unsafe DnsProtocolWriter AppendHeader(Header header)
 	{
-		return AppendUInt16(header.Identification)
-			.AppendUInt16(header.Flags.Value)
-			.AppendUInt16(header.QuestionRecordCount)
-			.AppendUInt16(header.AnswerRecordCount)
-			.AppendUInt16(header.AuthorityRecordCount)
-			.AppendUInt16(header.AdditionalRecordCount);
+		if (SeekableDestination.Remaining < Header.Length)
+		{
+			throw new InvalidOperationException("Not enough space to append header");
+		}
+
+		if (Ssse3.IsSupported)
+		{
+			fixed (byte* fixedBytePtr = SeekableDestination.Span)
+			{
+				var headerVector = Unsafe.As<Header, Vector128<byte>>(ref header);
+				
+				//Overwrite the extra 4-byte data we retrieved unsafely with zeroes
+				headerVector = headerVector.AsInt32().WithElement(3, 0).AsByte();
+
+				if (BitConverter.IsLittleEndian)
+				{
+					headerVector = Ssse3.Shuffle(headerVector, Header.EndianShuffle);
+				}
+
+				Sse2.Store(fixedBytePtr, headerVector);
+				return Advance(Header.Length);
+			}
+		}
+		else
+		{
+			return AppendUInt16(header.Identification)
+				.AppendUInt16(header.Flags.Value)
+				.AppendUInt16(header.QuestionRecordCount)
+				.AppendUInt16(header.AnswerRecordCount)
+				.AppendUInt16(header.AuthorityRecordCount)
+				.AppendUInt16(header.AdditionalRecordCount);
+		}
 	}
 
 	public DnsProtocolWriter AppendQuestion(Question question)

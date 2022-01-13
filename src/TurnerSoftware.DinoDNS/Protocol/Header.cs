@@ -1,10 +1,12 @@
-﻿using System.Buffers.Binary;
+﻿using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 
 namespace TurnerSoftware.DinoDNS.Protocol;
 
 /// <summary>
 /// Represents the first 12-bytes of a DNS message
 /// </summary>
+[StructLayout(LayoutKind.Sequential)]
 public readonly record struct Header(
 	ushort Identification, 
 	HeaderFlags Flags, 
@@ -15,6 +17,12 @@ public readonly record struct Header(
 )
 {
 	public const int Length = 12;
+
+	/// <summary>
+	/// Endian shuffle allows faster big-to-little endian conversion for reading/writing.
+	/// We only want to shuffle the first 12-bytes in 2-byte blocks.
+	/// </summary>
+	internal static readonly Vector128<byte> EndianShuffle = Vector128.Create((byte)1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, /* <- Header End */ 12, 13, 14, 15);
 
 	public override string ToString()
 	{

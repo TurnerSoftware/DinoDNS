@@ -21,6 +21,7 @@ public readonly struct SeekableMemory<T>
 	}
 
 	public bool EndOfData => Offset == Source.Length;
+	public int Remaining => Source.Length - Offset;
 
 	public Span<T> Span => Source.Span[Offset..];
 	public Memory<T> Memory => Source[Offset..];
@@ -64,6 +65,7 @@ public readonly struct SeekableReadOnlyMemory<T>
 	}
 
 	public bool EndOfData => Offset == Source.Length;
+	public int Remaining => Source.Length - Offset;
 
 	public ReadOnlySpan<T> Span => Source.Span[Offset..];
 	public ReadOnlyMemory<T> Memory => Source[Offset..];

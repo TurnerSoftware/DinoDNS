@@ -1,4 +1,7 @@
 ﻿using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS;
@@ -33,25 +36,41 @@ public readonly struct DnsProtocolReader
 		return Advance(bytes);
 	}
 
-	public DnsProtocolReader ReadHeader(out Header header)
+	public unsafe DnsProtocolReader ReadHeader(out Header header)
 	{
-		var reader = ReadUInt16(out var identification)
-			.ReadUInt16(out var headerFlags)
-			.ReadUInt16(out var questionRecordCount)
-			.ReadUInt16(out var answerRecordCount)
-			.ReadUInt16(out var authorityRecordCount)
-			.ReadUInt16(out var additionalRecordCount);
+		if (Ssse3.IsSupported)
+		{
+			fixed (byte* fixedBytePtr = SeekableSource.Span)
+			{
+				var headerVector = Sse3.LoadDquVector128(fixedBytePtr);
+				if (BitConverter.IsLittleEndian)
+				{
+					headerVector = Ssse3.Shuffle(headerVector, Header.EndianShuffle);
+				}
+				header = Unsafe.As<Vector128<byte>, Header>(ref headerVector);
+				return Advance(Header.Length);
+			}
+		}
+		else
+		{
+			var reader = ReadUInt16(out var identification)
+				.ReadUInt16(out var headerFlags)
+				.ReadUInt16(out var questionRecordCount)
+				.ReadUInt16(out var answerRecordCount)
+				.ReadUInt16(out var authorityRecordCount)
+				.ReadUInt16(out var additionalRecordCount);
 
-		header = new Header(
-			identification,
-			new HeaderFlags(headerFlags),
-			questionRecordCount,
-			answerRecordCount,
-			authorityRecordCount,
-			additionalRecordCount
-		);
+			header = new Header(
+				identification,
+				new HeaderFlags(headerFlags),
+				questionRecordCount,
+				answerRecordCount,
+				authorityRecordCount,
+				additionalRecordCount
+			);
 
-		return reader;
+			return reader;
+		}
 	}
 
 	public DnsProtocolReader ReadQuestion(out Question question)
