@@ -85,19 +85,23 @@ public enum QueryOrResponse : ushort
 public enum Opcode : ushort
 {
 	/// <summary>
-	/// Standard query.
+	/// Query
+	/// (RFC 1035)
 	/// </summary>
 	Query = 0,
 	/// <summary>
-	/// aka. Reverse DNS Lookup
+	/// Inverse Query (aka. Reverse DNS Lookup)
+	/// (RFC 1035)
 	/// </summary>
 	IQuery = 1 << 11,
 	/// <summary>
-	/// Server status
+	/// Server Status
+	/// (RFC 1035)
 	/// </summary>
 	Status = 2 << 11,
 	/// <summary>
-	/// Specifies whether to delete, add or update RRs from a specified DNS zone. (RFC 2136)
+	/// Specifies whether to delete, add or update RRs from a specified DNS zone.
+	/// (RFC 2136)
 	/// </summary>
 	Update = 5 << 11
 }
@@ -142,15 +146,72 @@ public enum RecursionAvailable : ushort
 
 public enum ResponseCode : ushort
 {
+	/// <summary>
+	/// No Error
+	/// (RFC 1035)
+	/// </summary>
 	NOERROR = 0,
+	/// <summary>
+	/// Format Error:
+	/// The name server was unable to interpret the query.
+	/// (RFC 1035)
+	/// </summary>
 	FORMERR = 1,
+	/// <summary>
+	/// Server Failure:
+	/// The name server was unable to process this query due to a problem with the name server.
+	/// (RFC 1035)
+	/// </summary>
 	SERVFAIL = 2,
+	/// <summary>
+	/// Non-Existent Domain:
+	/// Meaningful only for responses from an authoritative name server, 
+	/// this signifies that the domain name referenced in the query does not exist.
+	/// (RFC 1035)
+	/// </summary>
 	NXDOMAIN = 3,
+	/// <summary>
+	/// Not Implemented:
+	/// The name server does not support the requested kind of query.
+	/// (RFC 1035)
+	/// </summary>
 	NOTIMP = 4,
+	/// <summary>
+	/// Query Refused:
+	/// The name server refuses to perform the specified operation for policy reasons.
+	/// For example, a name server may not wish to provide the information to the particular requester,
+	/// or a name server may not wish to perform a particular operation (eg. zone transfer) for a particular data.
+	/// (RFC 1035)
+	/// </summary>
 	REFUSED = 5,
+	/// <summary>
+	/// Existing Domain:
+	/// An existing domain is found when it shouldn't.
+	/// (RFC 2136)
+	/// </summary>
 	YXDOMAIN = 6,
+	/// <summary>
+	/// Existing Resource Record Set:
+	/// An existing resource record set is found when it shouldn't.
+	/// (RFC 2136)
+	/// </summary>
 	YXRRSET = 7,
+	/// <summary>
+	/// Non-Existent Resource Record Set:
+	/// A resource record set doesn't exist when it should.
+	/// (RFC 2136)
+	/// </summary>
 	NXRRSET = 8,
+	/// <summary>
+	/// Not Authoriative:
+	/// The server is not authoritative for the zone named in the Zone Section.
+	/// (RFC 2136)
+	/// </summary>
 	NOTAUTH = 9,
+	/// <summary>
+	/// Not Zone:
+	/// A name used in the Prerequisite or Update Section is not within the zone donated by the Zone Section.
+	/// (RFC 2136)
+	/// </summary>
 	NOTZONE = 10
 }
