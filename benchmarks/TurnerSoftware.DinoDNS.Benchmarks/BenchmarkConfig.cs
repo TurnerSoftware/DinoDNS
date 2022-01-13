@@ -9,8 +9,6 @@ namespace TurnerSoftware.DinoDNS.Benchmarks;
 abstract class BenchmarkConfig : ManualConfig
 {
 	private const string ENV_ENABLE_HWINTRINSICS = "COMPlus_EnableHWIntrinsic";
-	private const string ENV_ENABLE_AVX2 = "COMPlus_EnableAVX2";
-	private const string ENV_ENABLE_SSE41 = "COMPlus_EnableSSE41";
 
 	public BenchmarkConfig()
 	{
@@ -31,7 +29,6 @@ abstract class BenchmarkConfig : ManualConfig
 		AddJob(Job.Default
 			.WithRuntime(CoreRuntime.Core60)
 			.WithEnvironmentVariable(ENV_ENABLE_HWINTRINSICS, "0")
-			.WithId(".NET 6.0 (No Intrinsics)")
 			.WithBaseline(asBaseline));
 	}
 }
