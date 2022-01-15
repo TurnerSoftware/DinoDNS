@@ -1,6 +1,4 @@
-﻿using TurnerSoftware.DinoDNS.Protocol;
-
-namespace TurnerSoftware.DinoDNS;
+﻿namespace TurnerSoftware.DinoDNS.Protocol;
 
 public static class DnsMessageExtensions
 {

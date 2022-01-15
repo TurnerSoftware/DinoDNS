@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using System.Net;
-using TurnerSoftware.DinoDNS.Messengers;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS.Benchmarks;
@@ -43,7 +42,7 @@ public class FullStackBenchmark
 
 		var testEndpoint = new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 53);
 
-		DinoDNS_DnsClient = new DnsClient(new IDnsMessenger[] { new UdpMessenger(testEndpoint) }, DnsClientOptions.Default);
+		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(testEndpoint, ConnectionType.Udp) }, DnsClientOptions.Default);
 		DinoDNS_Message = requestMessage;
 
 		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(testEndpoint);

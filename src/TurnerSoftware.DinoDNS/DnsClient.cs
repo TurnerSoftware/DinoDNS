@@ -1,20 +1,20 @@
 ﻿using System.Buffers;
 using System.Net.Sockets;
-using TurnerSoftware.DinoDNS.Messengers;
+using TurnerSoftware.DinoDNS.Connection;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS;
 
-public class DnsClient
+public sealed class DnsClient
 {
-	private readonly IDnsMessenger[] Messengers;
+	private readonly NameServer[] NameServers;
 	public readonly DnsClientOptions Options;
 
-	public DnsClient(IDnsMessenger[] messengers, DnsClientOptions options)
+	public DnsClient(NameServer[] nameServers, DnsClientOptions options)
 	{
-		if (messengers is null || messengers.Length == 0)
+		if (nameServers is null || nameServers.Length == 0)
 		{
-			throw new ArgumentException("Invalid number of DNS messengers configured.");
+			throw new ArgumentException("Invalid number of name servers configured.");
 		}
 
 		if (!options.Validate(out var errorMessage))
@@ -22,41 +22,51 @@ public class DnsClient
 			throw new ArgumentException($"Invalid DNS client options. {errorMessage}");
 		}
 
-		Messengers = messengers;
+		NameServers = nameServers;
 		Options = options;
 	}
 
+	private static IDnsConnection GetConnection(ConnectionType connectionType) => connectionType switch
+	{
+		ConnectionType.Udp => UdpConnection.Instance,
+		_ => throw new NotImplementedException()
+	};
+
 	public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
 	{
-		for (var i = 0; i < Messengers.Length; i++)
+		foreach (var nameServer in NameServers)
 		{
 			try
 			{
-				var messenger = Messengers[i];
-				var bytesReceived = await messenger.SendMessageAsync(sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
+				var connection = GetConnection(nameServer.ConnectionType);
+				var bytesReceived = await connection
+					.SendMessageAsync(nameServer.EndPoint, sourceBuffer, destinationBuffer, cancellationToken)
+					.ConfigureAwait(false);
 
 				//Check truncation, falling back to the next configured messenger
 				new DnsProtocolReader(destinationBuffer).ReadHeader(out var header);
-				if (header.Flags.Truncation == Truncation.Yes)
-				{
-					continue;
-				}
+				//if (header.Flags.Truncation == Truncation.Yes)
+				//{
+				//	continue;
+				//}
 
 				switch (header.Flags.ResponseCode)
 				{
 					case ResponseCode.SERVFAIL:
 					case ResponseCode.NOTIMP:
 					case ResponseCode.REFUSED:
+						//Try the next name server
 						continue;
 					case ResponseCode.FORMERR:
-						throw new FormatException("Name server responded with a Format Error");
+						//If we get a format error with one server, we will likely get it for all
+						throw new FormatException("There was a format error with your query.");
 				}
 
 				return bytesReceived;
 			}
 			catch (SocketException ex) when (ex.SocketErrorCode is SocketError.ConnectionReset or SocketError.ConnectionAborted)
 			{
-				//Allow certain types of socket errors to silently continue to the next messenger.
+				//Allow certain types of socket errors to silently continue to the next name server.
 				continue;
 			}
 		}
