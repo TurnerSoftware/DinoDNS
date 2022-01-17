@@ -18,13 +18,13 @@ public class StaticDnsServerBenchmark
 	public void Setup()
 	{
 		Socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-		TestServer.Start();
+		ExternalTestServer.StartUdp();
 	}
 
 	[GlobalCleanup]
 	public void Cleanup()
 	{
-		TestServer.Stop();
+		ExternalTestServer.Stop();
 	}
 
 	[Benchmark(Baseline = true)]

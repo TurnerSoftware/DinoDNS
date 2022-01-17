@@ -17,17 +17,17 @@ abstract class BenchmarkConfig : ManualConfig
 		AddColumn(StatisticColumn.OperationsPerSecond);
 	}
 
+	protected static Job GetCoreJob() => Job.Default.WithRuntime(CoreRuntime.Core60);
+
 	protected void AddCore(bool asBaseline = false)
 	{
-		AddJob(Job.Default
-			.WithRuntime(CoreRuntime.Core60)
+		AddJob(GetCoreJob()
 			.WithBaseline(asBaseline));
 	}
 
 	protected void AddCoreWithoutIntrinsics(bool asBaseline = false)
 	{
-		AddJob(Job.Default
-			.WithRuntime(CoreRuntime.Core60)
+		AddJob(GetCoreJob()
 			.WithEnvironmentVariable(ENV_ENABLE_HWINTRINSICS, "0")
 			.WithBaseline(asBaseline));
 	}

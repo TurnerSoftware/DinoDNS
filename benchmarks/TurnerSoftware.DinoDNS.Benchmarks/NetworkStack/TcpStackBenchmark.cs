@@ -2,10 +2,10 @@
 using System.Net;
 using TurnerSoftware.DinoDNS.Protocol;
 
-namespace TurnerSoftware.DinoDNS.Benchmarks;
+namespace TurnerSoftware.DinoDNS.Benchmarks.NetworkStack;
 
 [Config(typeof(DefaultBenchmarkConfig))]
-public class FullStackBenchmark
+public class TcpStackBenchmark
 {
 	private byte[]? RawMessage;
 
@@ -43,24 +43,23 @@ public class FullStackBenchmark
 		var testEndpoint = new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 53);
 
 		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(testEndpoint, ConnectionType.Udp) }, DnsClientOptions.Default);
-		DinoDNS_Message = requestMessage;
-
-		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(testEndpoint);
-		Kapetan_DNS_ClientRequest = Kapetan_DNS_DnsClient.FromArray(RawMessage);
-
+		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(new DNS.Client.RequestResolver.UdpRequestResolver(testEndpoint));
 		MichaCo_DnsClient_LookupClient = new global::DnsClient.LookupClient(new global::DnsClient.LookupClientOptions(testEndpoint)
 		{
 			UseCache = false
 		});
-		MichaCo_DnsClient_DnsQuestion = new global::DnsClient.DnsQuestion("test.www.example.org", global::DnsClient.QueryType.A);
 
-		TestServer.Start();
+		ExternalTestServer.StartUdp();
+
+		DinoDNS_Message = requestMessage;
+		Kapetan_DNS_ClientRequest = Kapetan_DNS_DnsClient.FromArray(RawMessage);
+		MichaCo_DnsClient_DnsQuestion = new global::DnsClient.DnsQuestion("test.www.example.org", global::DnsClient.QueryType.A);
 	}
 
 	[GlobalCleanup]
 	public void Cleanup()
 	{
-		TestServer.Stop();
+		ExternalTestServer.Stop();
 	}
 
 
@@ -70,11 +69,14 @@ public class FullStackBenchmark
 		return await DinoDNS_DnsClient!.SendAsync(DinoDNS_Message);
 	}
 
-	[Benchmark]
-	public async Task<DNS.Protocol.IResponse> Kapetan_DNS()
-	{
-		return await Kapetan_DNS_ClientRequest!.Resolve();
-	}
+	///// <summary>
+	///// Due to how this creates new sockets per request leading to port exhaustion, this can't be benchmarked with the others.
+	///// </summary>
+	//[Benchmark]
+	//public async Task<DNS.Protocol.IResponse> Kapetan_DNS()
+	//{
+	//	return await Kapetan_DNS_ClientRequest!.Resolve();
+	//}
 
 	[Benchmark]
 	public async Task<global::DnsClient.IDnsQueryResponse> MichaCo_DnsClient()
