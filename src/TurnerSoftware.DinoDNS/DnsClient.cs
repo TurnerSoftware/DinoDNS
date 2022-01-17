@@ -29,8 +29,42 @@ public sealed class DnsClient
 	private static IDnsConnection GetConnection(ConnectionType connectionType) => connectionType switch
 	{
 		ConnectionType.Udp => UdpConnection.Instance,
+		ConnectionType.Tcp => TcpConnection.Instance,
 		_ => throw new NotImplementedException()
 	};
+
+	public async ValueTask<DnsMessage> SendAsync(DnsMessage message, CancellationToken cancellationToken = default)
+	{
+		//We can't reuse the same buffer for sending and receiving as we may received an invalid payload back.
+		//This would then clear data that we'd want to try again and send.
+		var sourceBuffer = ArrayPool<byte>.Shared.Rent(Options.MaximumMessageSize);
+		var destinationBuffer = ArrayPool<byte>.Shared.Rent(Options.MaximumMessageSize);
+
+		var sourceMemory = sourceBuffer.AsMemory();
+		var destinationMemory = destinationBuffer.AsMemory();
+
+		var writtenBytes = new DnsProtocolWriter(sourceMemory).AppendMessage(message).GetWrittenBytes();
+
+		try
+		{
+			var bytesReceived = await SendAsync(writtenBytes, destinationMemory, cancellationToken).ConfigureAwait(false);
+			if (bytesReceived >= Header.Length)
+			{
+				var reader = new DnsProtocolReader(destinationMemory[..bytesReceived]);
+				reader.ReadMessage(out var receivedMessage);
+				return receivedMessage;
+			}
+			else
+			{
+				throw new IOException("No bytes received");
+			}
+		}
+		finally
+		{
+			ArrayPool<byte>.Shared.Return(sourceBuffer);
+			ArrayPool<byte>.Shared.Return(destinationBuffer);
+		}
+	}
 
 	public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
 	{
@@ -71,27 +105,6 @@ public sealed class DnsClient
 			}
 		}
 
-		throw new Exception("Unable to communicate with ");
-	}
-
-	public async ValueTask<DnsMessage> SendAsync(DnsMessage message, CancellationToken cancellationToken = default)
-	{
-		//We can't reuse the same buffer for sending and receiving as we may received an invalid payload back.
-		//This would then clear data that we'd want to try again and send.
-		var sourceBuffer = ArrayPool<byte>.Shared.Rent(Options.MaximumMessageSize);
-		var destinationBuffer = ArrayPool<byte>.Shared.Rent(Options.MaximumMessageSize);
-
-		var sourceMemory = sourceBuffer.AsMemory(); ;
-		var destinationMemory = destinationBuffer.AsMemory();
-
-		var writtenBytes = new DnsProtocolWriter(sourceMemory).AppendMessage(message).GetWrittenBytes();
-		var bytesReceived = await SendAsync(writtenBytes, destinationMemory, cancellationToken).ConfigureAwait(false);
-
-		var reader = new DnsProtocolReader(destinationMemory[..bytesReceived]);
-		reader.ReadMessage(out var receivedMessage);
-
-		ArrayPool<byte>.Shared.Return(sourceBuffer);
-		ArrayPool<byte>.Shared.Return(destinationBuffer);
-		return receivedMessage;
+		throw new Exception("No name servers are reachable");
 	}
 }
