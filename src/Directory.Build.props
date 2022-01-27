@@ -1,0 +1,32 @@
+<Project>
+
+  <PropertyGroup>
+    <RootNamespace>TurnerSoftware.Vibrancy</RootNamespace>
+
+    <Company>Turner Software</Company>
+
+    <PackageId>$(AssemblyName)</PackageId>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/TurnerSoftware/Vibrancy</PackageProjectUrl>
+    <PackageBaseTags>vibrant,color,colour,imaging</PackageBaseTags>
+
+    <!-- SourceLink Support -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <LangVersion>Latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="TurnerSoftware.BuildVersioning" Version="0.4.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\images\$(PackageIcon)" Pack="true" PackagePath="/" />
+  </ItemGroup>
+  
+</Project>

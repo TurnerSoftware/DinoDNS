@@ -1,6 +1,16 @@
-# Dino DNS
+<div align="center">
 
+![Icon](images/icon.png)
+# Dino DNS
 A fast and efficient DNS server and client
+
+![Build](https://img.shields.io/github/workflow/status/TurnerSoftware/DinosDNS/Build)
+<!--[![NuGet](https://img.shields.io/nuget/v/TurnerSoftware.Vibrancy.svg)](https://www.nuget.org/packages/TurnerSoftware.DinoDNS/)-->
+</div>
+
+
+
+
 
 ## Under Development
 

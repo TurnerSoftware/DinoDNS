@@ -21,7 +21,8 @@ static async ValueTask RunClientAsync()
 	var random = new Random();
 	var dnsClient = new DnsClient(new NameServer[]
 	{
-		new(IPAddress.Parse("1.1.1.1"), ConnectionType.Udp)
+		//new(IPAddress.Parse("1.1.1.1"), ConnectionType.Tcp)
+		new(IPAddress.Parse("192.168.0.11"), ConnectionType.Tcp)
 	}, DnsClientOptions.Default);
 
 	var stopwatch = new Stopwatch();
