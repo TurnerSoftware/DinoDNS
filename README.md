@@ -4,8 +4,8 @@
 # Dino DNS
 A fast and efficient DNS server and client
 
-![Build](https://img.shields.io/github/workflow/status/TurnerSoftware/DinosDNS/Build)
-<!--[![NuGet](https://img.shields.io/nuget/v/TurnerSoftware.Vibrancy.svg)](https://www.nuget.org/packages/TurnerSoftware.DinoDNS/)-->
+![Build](https://img.shields.io/github/workflow/status/TurnerSoftware/DinoDNS/Build)
+<!--[![NuGet](https://img.shields.io/nuget/v/TurnerSoftware.DinoDNS.svg)](https://www.nuget.org/packages/TurnerSoftware.DinoDNS/)-->
 </div>
 
 
