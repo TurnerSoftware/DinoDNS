@@ -11,7 +11,7 @@ public readonly record struct DnsMessage(
 	public static DnsMessage CreateQuery(
 		ushort identification, 
 		Opcode opcode = Opcode.Query, 
-		RecursionDesired recursionDesired = RecursionDesired.No
+		RecursionDesired recursionDesired = RecursionDesired.Yes
 	) => new()
 	{
 		Header = new()
