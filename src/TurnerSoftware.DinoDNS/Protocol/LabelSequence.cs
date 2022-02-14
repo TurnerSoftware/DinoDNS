@@ -138,4 +138,6 @@ public readonly partial struct LabelSequence
 			return builder.ToString();
 		}
 	}
+
+	public static implicit operator LabelSequence(string source) => new(source.AsMemory());
 }
