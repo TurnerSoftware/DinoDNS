@@ -50,4 +50,31 @@ public static class NameServers
 				=> new(SecondaryAddress, connectionType);
 		}
 	}
+
+	public static class Google
+	{
+		public static class IPv4
+		{
+			private static readonly IPAddress PrimaryAddress = IPAddress.Parse("8.8.8.8");
+			private static readonly IPAddress SecondaryAddress = IPAddress.Parse("8.8.4.4");
+
+			public static NameServer GetPrimary(ConnectionType connectionType)
+				=> new(PrimaryAddress, connectionType);
+
+			public static NameServer GetSecondary(ConnectionType connectionType)
+				=> new(SecondaryAddress, connectionType);
+		}
+
+		public static class IPv6
+		{
+			private static readonly IPAddress PrimaryAddress = IPAddress.Parse("2001:4860:4860::8888");
+			private static readonly IPAddress SecondaryAddress = IPAddress.Parse("2001:4860:4860::8844");
+
+			public static NameServer GetPrimary(ConnectionType connectionType)
+				=> new(PrimaryAddress, connectionType);
+
+			public static NameServer GetSecondary(ConnectionType connectionType)
+				=> new(SecondaryAddress, connectionType);
+		}
+	}
 }
