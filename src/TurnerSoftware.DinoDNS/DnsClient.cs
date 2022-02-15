@@ -31,6 +31,7 @@ public sealed class DnsClient
 		ConnectionType.Udp => UdpConnection.Instance,
 		ConnectionType.Tcp => TcpConnection.Instance,
 		ConnectionType.DoH => HttpsConnection.Instance,
+		ConnectionType.DoT => TlsConnection.Instance,
 		_ => throw new NotImplementedException()
 	};
 
