@@ -1,81 +1,56 @@
-﻿using System.Buffers;
-using System.Buffers.Binary;
+﻿using System.Buffers.Binary;
+using System.Net.Sockets;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Net.Sockets;
-using System;
-using System.Net.Security;
 
 namespace TurnerSoftware.DinoDNS.Connection;
 
-public sealed class TlsConnection : IDnsConnection
+public sealed class TlsConnection : TcpConnection
 {
-	private static readonly ConcurrentDictionary<IPEndPoint, ConcurrentQueue<Socket>> Sockets = new();
+	public const SslProtocols DefaultSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
+	public new static readonly TlsConnection Instance = new(DefaultSslProtocols);
 
-	public static readonly TlsConnection Instance = new();
+	public readonly SslProtocols EnabledSslProtocols;
 
-	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	private readonly ConcurrentDictionary<IntPtr, SslStream> StreamLookup = new();
+
+	public TlsConnection(SslProtocols enabledSslProtocols)
 	{
-		static ConcurrentQueue<Socket> InitialiseSocketQueue(IPEndPoint endPoint) => new();
-		var socketQueue = Sockets.GetOrAdd(endPoint, InitialiseSocketQueue);
+		EnabledSslProtocols = enabledSslProtocols;
+	}
 
-		static Socket NewSocket(IPEndPoint endPoint)
+	protected override async ValueTask OnConnectAsync(Socket socket, IPEndPoint endPoint, CancellationToken cancellationToken)
+	{
+		var stream = new SslStream(new NetworkStream(socket), true);
+		await stream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
 		{
-			//TODO: Configure Send/Receive Timeout for socket
-			var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
-			{
-				SendBufferSize = 2048,
-				ReceiveBufferSize = 2048,
-				SendTimeout = 10,
-				ReceiveTimeout = 10
-			};
-			return socket;
-		}
-		if (socketQueue.TryDequeue(out var socket))
-		{
-			if (!socket.Connected)
-			{
-				//TODO: Investigate whether we can just re-connect to existing sockets that are closed
-				socket.Dispose();
-				socket = NewSocket(endPoint);
-			}
-		}
-		else if (socket is null)
-		{
-			socket = NewSocket(endPoint);
-		}
+			TargetHost = socket.RemoteEndPoint!.ToString(),
+			EnabledSslProtocols = EnabledSslProtocols
+		}, cancellationToken);
+		StreamLookup.TryAdd(socket.Handle, stream);
+	}
 
-		try
-		{
-			if (!socket.Connected)
-			{
-				await socket.ConnectAsync(endPoint).ConfigureAwait(false);
-			}
+	protected override void OnSocketEnd(Socket socket) => StreamLookup.TryRemove(socket.Handle, out _);
 
-			using var tlsStream = new SslStream(new NetworkStream(socket), true);
-			await tlsStream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
-			{
-				TargetHost = endPoint.Address.ToString(),
-				EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
-			}, cancellationToken);
+	protected override async ValueTask<int> PerformQueryAsync(Socket socket, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	{
+		var stream = StreamLookup.GetValueOrDefault(socket.Handle)!;
 
-			//TCP connections require sending a 2-byte length value before the message.
-			//Use our destination buffer as a temporary buffer to get and send the length.
-			BinaryPrimitives.WriteUInt16BigEndian(destinationBuffer.Span, (ushort)sourceBuffer.Length);
-			await tlsStream.WriteAsync(destinationBuffer[..2], cancellationToken).ConfigureAwait(false);
-			//Send our main message from our source buffer	
-			await tlsStream.WriteAsync(sourceBuffer, cancellationToken).ConfigureAwait(false);
+		//TCP connections require sending a 2-byte length value before the message.
+		//Use our destination buffer as a temporary buffer to get and send the length.
+		BinaryPrimitives.WriteUInt16BigEndian(destinationBuffer.Span, (ushort)sourceBuffer.Length);
+		await stream.WriteAsync(destinationBuffer[..2], cancellationToken).ConfigureAwait(false);
+		//Send our main message from our source buffer	
+		await stream.WriteAsync(sourceBuffer, cancellationToken).ConfigureAwait(false);
 
-			//Read the corresponding 2-byte length in the response to know how long the message is
-			await tlsStream.ReadAsync(destinationBuffer[..2], cancellationToken).ConfigureAwait(false);
-			var messageLength = BinaryPrimitives.ReadUInt16BigEndian(destinationBuffer.Span);
-			//Read the response based on the determined message length
-			await tlsStream.ReadAsync(destinationBuffer[..messageLength], cancellationToken).ConfigureAwait(false);
-			return messageLength;
-		}
-		finally
-		{
-			socketQueue.Enqueue(socket);
-		}
+		//Read the corresponding 2-byte length in the response to know how long the message is
+		await stream.ReadAsync(destinationBuffer[..2], cancellationToken).ConfigureAwait(false);
+		var messageLength = BinaryPrimitives.ReadUInt16BigEndian(destinationBuffer.Span);
+		//Read the response based on the determined message length
+		await stream.ReadAsync(destinationBuffer[..messageLength], cancellationToken).ConfigureAwait(false);
+
+		return messageLength;
 	}
 }
