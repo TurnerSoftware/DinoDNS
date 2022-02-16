@@ -69,13 +69,7 @@ public sealed class DnsClient
 					.SendMessageAsync(nameServer.EndPoint, sourceBuffer, destinationBuffer, cancellationToken)
 					.ConfigureAwait(false);
 
-				//Check truncation, falling back to the next configured messenger
 				new DnsProtocolReader(destinationBuffer).ReadHeader(out var header);
-				if (header.Flags.Truncation == Truncation.Yes)
-				{
-					continue;
-				}
-
 				switch (header.Flags.ResponseCode)
 				{
 					case ResponseCode.SERVFAIL:
