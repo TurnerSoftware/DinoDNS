@@ -29,6 +29,7 @@ public static class NameServers
 	{
 		ConnectionType.Udp => UdpConnection.Instance,
 		ConnectionType.Tcp => TcpConnection.Instance,
+		ConnectionType.UdpWithTcpFallback => UdpTcpConnection.Instance,
 		ConnectionType.DoH => HttpsConnection.Instance,
 		ConnectionType.DoT => TlsConnection.Instance,
 		_ => throw new NotImplementedException()
