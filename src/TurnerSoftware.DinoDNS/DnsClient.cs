@@ -81,10 +81,10 @@ public sealed class DnsClient
 
 				//Check truncation, falling back to the next configured messenger
 				new DnsProtocolReader(destinationBuffer).ReadHeader(out var header);
-				//if (header.Flags.Truncation == Truncation.Yes)
-				//{
-				//	continue;
-				//}
+				if (header.Flags.Truncation == Truncation.Yes)
+				{
+					continue;
+				}
 
 				switch (header.Flags.ResponseCode)
 				{
