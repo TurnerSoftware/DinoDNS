@@ -9,7 +9,10 @@ public readonly record struct NameServer(IPEndPoint EndPoint, IDnsConnection Con
 		: this(address, NameServers.GetDefaultPort(connectionType), connectionType) { }
 
 	public NameServer(IPAddress address, int port, ConnectionType connectionType)
-		: this(new IPEndPoint(address, port), NameServers.GetDefaultConnection(connectionType)) { }
+		: this(new IPEndPoint(address, port), connectionType) { }
+
+	public NameServer(IPEndPoint endPoint, ConnectionType connectionType)
+		: this(endPoint, NameServers.GetDefaultConnection(connectionType)) { }
 
 	public static implicit operator NameServer(IPAddress address) => new(address, ConnectionType.Udp);
 }
