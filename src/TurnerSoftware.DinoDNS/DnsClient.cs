@@ -1,6 +1,5 @@
 ﻿using System.Buffers;
 using System.Net.Sockets;
-using TurnerSoftware.DinoDNS.Connection;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS;
@@ -25,15 +24,6 @@ public sealed class DnsClient
 		NameServers = nameServers;
 		Options = options;
 	}
-
-	private static IDnsConnection GetConnection(ConnectionType connectionType) => connectionType switch
-	{
-		ConnectionType.Udp => UdpConnection.Instance,
-		ConnectionType.Tcp => TcpConnection.Instance,
-		ConnectionType.DoH => HttpsConnection.Instance,
-		ConnectionType.DoT => TlsConnection.Instance,
-		_ => throw new NotImplementedException()
-	};
 
 	public async ValueTask<DnsMessage> SendAsync(DnsMessage message, CancellationToken cancellationToken = default)
 	{
@@ -74,7 +64,7 @@ public sealed class DnsClient
 		{
 			try
 			{
-				var connection = GetConnection(nameServer.ConnectionType);
+				var connection = nameServer.Connection;
 				var bytesReceived = await connection
 					.SendMessageAsync(nameServer.EndPoint, sourceBuffer, destinationBuffer, cancellationToken)
 					.ConfigureAwait(false);
