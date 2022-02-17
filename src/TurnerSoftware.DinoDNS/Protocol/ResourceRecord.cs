@@ -18,7 +18,5 @@ public readonly record struct ResourceRecord(
 	ReadOnlyMemory<byte> Data
 )
 {
-	public TimeSpan TimeSpanToLive => TimeSpan.FromSeconds(TimeToLive);
-
 	public override string ToString() => $"DomainName:{DomainName.ToString()},Type:{Type},CLASS:{Class},TTL:{TimeToLive},Length:{ResourceDataLength}";
 }
