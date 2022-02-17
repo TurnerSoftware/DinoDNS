@@ -29,20 +29,23 @@ public sealed class DnsClient
 	{
 		//We can't reuse the same buffer for sending and receiving as we may received an invalid payload back.
 		//This would then clear data that we'd want to try again and send.
-		var sourceBuffer = ArrayPool<byte>.Shared.Rent(Options.MaximumMessageSize);
-		var destinationBuffer = ArrayPool<byte>.Shared.Rent(Options.MaximumMessageSize);
+		//We can share the single instance of the buffer if we split it in half - this performs maginally faster than renting two arrays.
+		var readWriteBuffer = ArrayPool<byte>.Shared.Rent(Options.MaximumMessageSize * 2);
+		var sourceBuffer = readWriteBuffer.AsMemory(0, Options.MaximumMessageSize);
+		var destinationBuffer = readWriteBuffer.AsMemory(Options.MaximumMessageSize);
 
-		var sourceMemory = sourceBuffer.AsMemory();
-		var destinationMemory = destinationBuffer.AsMemory();
-
-		var writtenBytes = new DnsProtocolWriter(sourceMemory).AppendMessage(message).GetWrittenBytes();
+		var writtenBytes = new DnsProtocolWriter(sourceBuffer).AppendMessage(message).GetWrittenBytes();
 
 		try
 		{
-			var bytesReceived = await SendAsync(writtenBytes, destinationMemory, cancellationToken).ConfigureAwait(false);
+			var bytesReceived = await SendAsync(writtenBytes, destinationBuffer, cancellationToken).ConfigureAwait(false);
 			if (bytesReceived >= Header.Length)
 			{
-				var reader = new DnsProtocolReader(destinationMemory[..bytesReceived]);
+				//We must allocate and copy the data to avoid use-after-free issues with the rented ArrayPool bytes.
+				var returnSafeBuffer = new byte[bytesReceived].AsMemory();
+				destinationBuffer[..bytesReceived].CopyTo(returnSafeBuffer);
+
+				var reader = new DnsProtocolReader(returnSafeBuffer);
 				reader.ReadMessage(out var receivedMessage);
 				return receivedMessage;
 			}
@@ -53,8 +56,7 @@ public sealed class DnsClient
 		}
 		finally
 		{
-			ArrayPool<byte>.Shared.Return(sourceBuffer);
-			ArrayPool<byte>.Shared.Return(destinationBuffer);
+			ArrayPool<byte>.Shared.Return(readWriteBuffer);
 		}
 	}
 
