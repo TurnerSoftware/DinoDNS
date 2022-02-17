@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
 		<AssemblyName>TurnerSoftware.DinoDNS</AssemblyName>
 		<Title>TurnerSoftware.DinoDNS</Title>
-		<Description>A fast and efficient DNS server and client</Description>
+		<Description>An extremely fast and efficient DNS client and server with UDP, TCP, DNS-over-HTTPS and DNS-over-TLS support.</Description>
 		<PackageTags>$(PackageBaseTags)</PackageTags>
 		<Authors>James Turner</Authors>
 		<ImplicitUsings>enable</ImplicitUsings>

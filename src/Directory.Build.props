@@ -10,7 +10,7 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/TurnerSoftware/DinoDNS</PackageProjectUrl>
-		<PackageBaseTags>dns,client,resolver,server</PackageBaseTags>
+		<PackageBaseTags>dns,client,resolver,server,doh,https,dot,tls</PackageBaseTags>
 
 		<!-- SourceLink Support -->
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
