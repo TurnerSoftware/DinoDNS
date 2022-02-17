@@ -3,6 +3,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Reflection;
+using TurnerSoftware.DinoDNS.Internal;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS.Tests.Protocol;

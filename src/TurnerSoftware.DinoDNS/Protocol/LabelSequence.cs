@@ -2,6 +2,7 @@
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
+using TurnerSoftware.DinoDNS.Internal;
 
 namespace TurnerSoftware.DinoDNS.Protocol;
 

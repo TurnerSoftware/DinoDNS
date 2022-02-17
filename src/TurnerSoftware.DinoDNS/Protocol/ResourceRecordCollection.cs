@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using TurnerSoftware.DinoDNS.Internal;
 
 namespace TurnerSoftware.DinoDNS.Protocol;
 

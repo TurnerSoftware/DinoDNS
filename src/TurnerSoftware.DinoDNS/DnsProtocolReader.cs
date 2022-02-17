@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using TurnerSoftware.DinoDNS.Internal;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS;

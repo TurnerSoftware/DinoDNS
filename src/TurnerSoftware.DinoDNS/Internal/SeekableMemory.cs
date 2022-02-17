@@ -1,4 +1,4 @@
-﻿namespace TurnerSoftware.DinoDNS;
+﻿namespace TurnerSoftware.DinoDNS.Internal;
 
 /// <summary>
 /// </summary>
