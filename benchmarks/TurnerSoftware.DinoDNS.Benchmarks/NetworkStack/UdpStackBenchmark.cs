@@ -62,23 +62,21 @@ public class UdpStackBenchmark
 		ExternalTestServer.Stop();
 	}
 
-
 	[Benchmark(Baseline = true)]
 	public async Task<DnsMessage> DinoDNS()
 	{
 		return await DinoDNS_DnsClient!.SendAsync(DinoDNS_Message);
 	}
 
+	[Benchmark]
+	public async Task<DNS.Protocol.IResponse> Kapetan_DNS()
+	{
+		return await Kapetan_DNS_ClientRequest!.Resolve();
+	}
 
-	//[Benchmark]
-	//public async Task<DNS.Protocol.IResponse> Kapetan_DNS()
-	//{
-	//	return await Kapetan_DNS_ClientRequest!.Resolve();
-	//}
-
-	//[Benchmark]
-	//public async Task<global::DnsClient.IDnsQueryResponse> MichaCo_DnsClient()
-	//{
-	//	return await MichaCo_DnsClient_LookupClient!.QueryAsync(MichaCo_DnsClient_DnsQuestion);
-	//}
+	[Benchmark]
+	public async Task<global::DnsClient.IDnsQueryResponse> MichaCo_DnsClient()
+	{
+		return await MichaCo_DnsClient_LookupClient!.QueryAsync(MichaCo_DnsClient_DnsQuestion);
+	}
 }
