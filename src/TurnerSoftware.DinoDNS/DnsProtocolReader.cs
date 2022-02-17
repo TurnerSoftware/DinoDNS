@@ -93,15 +93,21 @@ public readonly struct DnsProtocolReader
 
 	public DnsProtocolReader ReadQuestionCollection(out QuestionCollection questions, int itemCount)
 	{
-		var reader = this;
-		questions = new QuestionCollection(SeekableSource, itemCount);
-
-		//Move the reader ahead by an equal number of questions
-		for (var i = 0; i < itemCount; i++)
+		if (itemCount > 0)
 		{
-			reader = reader.SkipQuestion();
+			var reader = this;
+			questions = new QuestionCollection(SeekableSource, itemCount);
+
+			//Move the reader ahead by an equal number of questions
+			for (var i = 0; i < itemCount; i++)
+			{
+				reader = reader.SkipQuestion();
+			}
+			return reader;
 		}
-		return reader;
+
+		questions = default;
+		return this;
 	}
 
 	public DnsProtocolReader ReadLabelSequence(out LabelSequence labelSequence)
@@ -142,15 +148,21 @@ public readonly struct DnsProtocolReader
 
 	public DnsProtocolReader ReadResourceRecordCollection(out ResourceRecordCollection resourceRecords, int itemCount)
 	{
-		var reader = this;
-		resourceRecords = new ResourceRecordCollection(SeekableSource, itemCount);
-
-		//Move the reader ahead by an equal number of resource records
-		for (var i = 0; i < itemCount; i++)
+		if (itemCount > 0)
 		{
-			reader = reader.SkipResourceRecord();
+			var reader = this;
+			resourceRecords = new ResourceRecordCollection(SeekableSource, itemCount);
+
+			//Move the reader ahead by an equal number of resource records
+			for (var i = 0; i < itemCount; i++)
+			{
+				reader = reader.SkipResourceRecord();
+			}
+			return reader;
 		}
-		return reader;
+
+		resourceRecords = default;
+		return this;
 	}
 
 	public DnsProtocolReader ReadMessage(out DnsMessage message)
