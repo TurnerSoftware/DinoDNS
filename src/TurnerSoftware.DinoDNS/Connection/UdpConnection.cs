@@ -16,7 +16,8 @@ public sealed class UdpConnection : IDnsConnection
 		if (!socketQueue.TryDequeue(out var socket))
 		{
 			socket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-			await socket.ConnectAsync(endPoint).ConfigureAwait(false);
+			//There is no IO involved in connecting to a connection-less protocol
+			socket.Connect(endPoint);
 		}
 
 		try
