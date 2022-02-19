@@ -11,25 +11,28 @@ public static class TestServer
 	private const int DEFAULT_DNS_SERVER_PORT = 53;
 	private readonly static IPEndPoint ENDPOINT = new(IPAddress.Any, DEFAULT_DNS_SERVER_PORT);
 
-	public static void Start(string[] args)
-	{
-		_ = Task.Run(async () => await StartAsync(args));
-		Task.Delay(500).Wait();
-	}
-
 	public static async ValueTask StartAsync(string[] args)
 	{
 		try
 		{
-			if (args.Length > 0 && args[0] == "tcp")
+			var cancellationTokenSource = new CancellationTokenSource();
+			_ = Task.Run(() => {
+				Console.Read();
+				cancellationTokenSource.Cancel();
+			});
+
+			var protocol = args.Length > 0 ? args[0] : "udp";
+			switch (protocol)
 			{
-				Console.WriteLine("TCP server started!");
-				await RunTcpServerAsync();
-			}
-			else
-			{
-				Console.WriteLine("UDP server started!");
-				await RunUdpServerAsync();
+				case "tcp":
+					Console.WriteLine("TCP server started!");
+					await RunTcpServerAsync(cancellationTokenSource.Token);
+					break;
+				case "udp":
+				default:
+					Console.WriteLine("UDP server started!");
+					await RunUdpServerAsync(cancellationTokenSource.Token);
+					break;
 			}
 		}
 		catch (OperationCanceledException)
@@ -38,11 +41,17 @@ public static class TestServer
 		}
 	}
 
-	private static async ValueTask RunUdpServerAsync()
+	private static CancellationTokenSource GetNewTimeoutSource(CancellationToken cancellationToken)
+	{
+		var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+		cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
+		return cancellationSource;
+	}
+
+	private static async ValueTask RunUdpServerAsync(CancellationToken cancellationToken)
 	{
 		var exampleData = GenerateExampleData();
-		var cancellationSource = new CancellationTokenSource();
-		cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
+		var cancellationSource = GetNewTimeoutSource(cancellationToken);
 
 		var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 		socket.Bind(ENDPOINT);
@@ -51,20 +60,18 @@ public static class TestServer
 		{
 			var result = await socket.ReceiveFromAsync(buffer, SocketFlags.None, ENDPOINT, cancellationSource.Token);
 			socket.SendTo(exampleData.Span, result.RemoteEndPoint);
-			cancellationSource = new CancellationTokenSource();
-			cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
+			cancellationSource = GetNewTimeoutSource(cancellationToken);
 		}
 	}
 
-	private static async ValueTask RunTcpServerAsync()
+	private static async ValueTask RunTcpServerAsync(CancellationToken cancellationToken)
 	{
 		var exampleData = GenerateExampleData();
 		var tcpExampleData = new byte[exampleData.Length + 2].AsMemory();
 		BinaryPrimitives.WriteUInt16BigEndian(tcpExampleData.Span, (ushort)exampleData.Length);
 		exampleData.CopyTo(tcpExampleData[2..]);
 
-		var cancellationSource = new CancellationTokenSource();
-		cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
+		var cancellationSource = GetNewTimeoutSource(cancellationToken);
 		var listener = new TcpListener(ENDPOINT);
 		try
 		{
@@ -92,8 +99,7 @@ public static class TestServer
 					var messageLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Span);
 					await socket.ReceiveAsync(buffer[2..][..messageLength], SocketFlags.None, cancellationSource.Token);
 					await socket.SendAsync(tcpExampleData, SocketFlags.None, cancellationSource.Token);
-					cancellationSource = new CancellationTokenSource();
-					cancellationSource.CancelAfter(TimeSpan.FromSeconds(TIMEOUT_IN_SECONDS));
+					cancellationSource = GetNewTimeoutSource(cancellationToken);
 				}
 				catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
 				{
