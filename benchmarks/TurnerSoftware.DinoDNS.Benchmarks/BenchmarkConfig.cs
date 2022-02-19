@@ -15,6 +15,11 @@ abstract class BenchmarkConfig : ManualConfig
 		WithOptions(ConfigOptions.DisableOptimizationsValidator);
 		AddDiagnoser(MemoryDiagnoser.Default);
 		AddColumn(StatisticColumn.OperationsPerSecond);
+
+		WithSummaryStyle(
+			BenchmarkDotNet.Reports.SummaryStyle.Default
+				.WithSizeUnit(SizeUnit.B)
+		);
 	}
 
 	protected static Job GetCoreJob() => Job.Default.WithRuntime(CoreRuntime.Core60);
