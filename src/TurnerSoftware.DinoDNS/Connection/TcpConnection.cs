@@ -44,8 +44,8 @@ public class TcpConnection : IDnsConnection
 
 		if (!socket.Connected)
 		{
-			await socket.ConnectAsync(endPoint);
-			await OnConnectAsync(socket, endPoint, cancellationToken);
+			await socket.ConnectAsync(endPoint).ConfigureAwait(false);
+			await OnConnectAsync(socket, endPoint, cancellationToken).ConfigureAwait(false);
 		}
 
 		try

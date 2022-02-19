@@ -28,7 +28,7 @@ public sealed class TlsConnection : TcpConnection
 		{
 			TargetHost = socket.RemoteEndPoint!.ToString(),
 			EnabledSslProtocols = EnabledSslProtocols
-		}, cancellationToken);
+		}, cancellationToken).ConfigureAwait(false);
 		StreamLookup.TryAdd(socket.Handle, stream);
 	}
 

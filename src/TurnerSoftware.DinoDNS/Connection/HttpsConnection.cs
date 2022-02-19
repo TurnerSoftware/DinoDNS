@@ -36,11 +36,11 @@ public sealed class HttpsConnection : IDnsConnection
 
 		var content = new ReadOnlyMemoryContent(sourceBuffer);
 		content.Headers.ContentType = ContentType;
-		using var response = await httpClient.PostAsync((Uri?)null, content, cancellationToken);
+		using var response = await httpClient.PostAsync((Uri?)null, content, cancellationToken).ConfigureAwait(false);
 
 		//TODO: Handle response statuses
-		var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+		var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 		//This is assuming that the stream is a MemoryStream
-		return await responseStream.ReadAsync(destinationBuffer, cancellationToken);
+		return await responseStream.ReadAsync(destinationBuffer, cancellationToken).ConfigureAwait(false);
 	}
 }
