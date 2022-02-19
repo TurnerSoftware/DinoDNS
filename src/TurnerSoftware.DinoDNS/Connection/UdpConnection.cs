@@ -6,24 +6,24 @@ namespace TurnerSoftware.DinoDNS.Connection;
 
 public sealed class UdpConnection : IDnsConnection
 {
-	private static readonly ConcurrentQueue<Socket> Sockets4 = new();
-	private static readonly ConcurrentQueue<Socket> Sockets6 = new();
-
 	public static readonly UdpConnection Instance = new();
+
+	private readonly ConcurrentDictionary<IPEndPoint, ConcurrentQueue<Socket>> Sockets = new();
 
 	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
 	{
-		var socketQueue = endPoint.AddressFamily == AddressFamily.InterNetwork ? Sockets4 : Sockets6;
+		var socketQueue = Sockets.GetOrAdd(endPoint, static _ => new());
 		if (!socketQueue.TryDequeue(out var socket))
 		{
 			socket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+			await socket.ConnectAsync(endPoint).ConfigureAwait(false);
 		}
 
 		try
 		{
-			await socket.SendToAsync(sourceBuffer, SocketFlags.None, endPoint, cancellationToken).ConfigureAwait(false);
-			var result = await socket.ReceiveFromAsync(destinationBuffer, SocketFlags.None, endPoint, cancellationToken).ConfigureAwait(false);
-			return result.ReceivedBytes;
+			await socket.SendAsync(sourceBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+			var messageLength = await socket.ReceiveAsync(destinationBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+			return messageLength;
 		}
 		finally
 		{
