@@ -23,7 +23,7 @@ static async ValueTask RunClientAsync()
 	{
 		NameServers.Cloudflare.IPv4.GetPrimary(ConnectionType.DoT)
 		//new(IPAddress.Parse("192.168.0.11"), ConnectionType.Tcp)
-	}, DnsClientOptions.Default);
+	}, DnsMessageOptions.Default);
 
 	var stopwatch = new Stopwatch();
 	while (true)

@@ -7,9 +7,9 @@ namespace TurnerSoftware.DinoDNS;
 public sealed class DnsClient
 {
 	private readonly NameServer[] NameServers;
-	public readonly DnsClientOptions Options;
+	public readonly DnsMessageOptions Options;
 
-	public DnsClient(NameServer[] nameServers, DnsClientOptions options)
+	public DnsClient(NameServer[] nameServers, DnsMessageOptions options)
 	{
 		if (nameServers is null || nameServers.Length == 0)
 		{
@@ -60,7 +60,7 @@ public sealed class DnsClient
 		}
 	}
 
-	public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken = default)
 	{
 		foreach (var nameServer in NameServers)
 		{

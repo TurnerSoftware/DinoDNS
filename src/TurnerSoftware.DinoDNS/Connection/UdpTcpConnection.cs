@@ -3,18 +3,18 @@ using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS.Connection;
 
-public sealed class UdpTcpConnection : IDnsConnection
+public sealed class UdpTcpConnectionClient : IDnsConnectionClient
 {
-	public static readonly UdpTcpConnection Instance = new();
+	public static readonly UdpTcpConnectionClient Instance = new();
 
 	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
 	{
-		var messageLength = await UdpConnection.Instance.SendMessageAsync(endPoint, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
+		var messageLength = await UdpConnectionClient.Instance.SendMessageAsync(endPoint, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
 
 		new DnsProtocolReader(destinationBuffer).ReadHeader(out var header);
 		if (header.Flags.Truncation == Truncation.Yes)
 		{
-			messageLength = await TcpConnection.Instance.SendMessageAsync(endPoint, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false); 
+			messageLength = await TcpConnectionClient.Instance.SendMessageAsync(endPoint, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false); 
 		}
 
 		return messageLength;

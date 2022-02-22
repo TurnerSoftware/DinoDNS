@@ -5,9 +5,9 @@ using System.Net.Sockets;
 
 namespace TurnerSoftware.DinoDNS.Connection;
 
-public class TcpConnection : IDnsConnection
+public class TcpConnectionClient : IDnsConnectionClient
 {
-	public static readonly TcpConnection Instance = new();
+	public static readonly TcpConnectionClient Instance = new();
 
 	private readonly ConcurrentDictionary<IPEndPoint, ConcurrentQueue<Socket>> Sockets = new();
 
@@ -73,5 +73,14 @@ public class TcpConnection : IDnsConnection
 		//Read the response based on the determined message length
 		await socket.ReceiveAsync(destinationBuffer[..messageLength], SocketFlags.None, cancellationToken).ConfigureAwait(false);
 		return messageLength;
+	}
+}
+
+
+public class TcpConnectionServer : IDnsConnectionServer
+{
+	public Task ListenAsync(IPEndPoint endPoint, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
+	{
+		throw new NotImplementedException();
 	}
 }

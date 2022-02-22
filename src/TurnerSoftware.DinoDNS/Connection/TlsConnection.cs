@@ -7,16 +7,16 @@ using System.Net;
 
 namespace TurnerSoftware.DinoDNS.Connection;
 
-public sealed class TlsConnection : TcpConnection
+public sealed class TlsConnectionClient : TcpConnectionClient
 {
 	public const SslProtocols DefaultSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
-	public new static readonly TlsConnection Instance = new(DefaultSslProtocols);
+	public new static readonly TlsConnectionClient Instance = new(DefaultSslProtocols);
 
 	public readonly SslProtocols EnabledSslProtocols;
 
 	private readonly ConcurrentDictionary<IntPtr, SslStream> StreamLookup = new();
 
-	public TlsConnection(SslProtocols enabledSslProtocols)
+	public TlsConnectionClient(SslProtocols enabledSslProtocols)
 	{
 		EnabledSslProtocols = enabledSslProtocols;
 	}
@@ -53,4 +53,9 @@ public sealed class TlsConnection : TcpConnection
 
 		return messageLength;
 	}
+}
+
+public sealed class TlsConnectionServer : TcpConnectionServer
+{
+
 }

@@ -42,7 +42,7 @@ public class TcpStackBenchmark
 
 		var testEndpoint = new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 53);
 
-		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(testEndpoint, ConnectionType.Udp) }, DnsClientOptions.Default);
+		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(testEndpoint, ConnectionType.Udp) }, DnsMessageOptions.Default);
 		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(new DNS.Client.RequestResolver.UdpRequestResolver(testEndpoint));
 		MichaCo_DnsClient_LookupClient = new global::DnsClient.LookupClient(new global::DnsClient.LookupClientOptions(testEndpoint)
 		{

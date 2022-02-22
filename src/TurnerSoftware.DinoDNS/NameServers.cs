@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using TurnerSoftware.DinoDNS.Connection;
 
 namespace TurnerSoftware.DinoDNS;
 
@@ -23,16 +22,6 @@ public static class NameServers
 		ConnectionType.DoH => DefaultDoHPort,
 		ConnectionType.DoT => DefaultDoTPort,
 		_ => DefaultPort
-	};
-
-	public static IDnsConnection GetDefaultConnection(ConnectionType connectionType) => connectionType switch
-	{
-		ConnectionType.Udp => UdpConnection.Instance,
-		ConnectionType.Tcp => TcpConnection.Instance,
-		ConnectionType.UdpWithTcpFallback => UdpTcpConnection.Instance,
-		ConnectionType.DoH => HttpsConnection.Instance,
-		ConnectionType.DoT => TlsConnection.Instance,
-		_ => throw new NotImplementedException()
 	};
 
 	public static class Cloudflare

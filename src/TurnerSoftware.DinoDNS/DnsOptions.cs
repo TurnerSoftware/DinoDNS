@@ -2,7 +2,7 @@
 
 namespace TurnerSoftware.DinoDNS;
 
-public readonly record struct DnsClientOptions(
+public readonly record struct DnsMessageOptions(
 	int MaximumMessageSize
 )
 {
@@ -18,7 +18,7 @@ public readonly record struct DnsClientOptions(
 	public const int MinimumMessageSize = 64;
 
 
-	public static readonly DnsClientOptions Default = new()
+	public static readonly DnsMessageOptions Default = new()
 	{
 		MaximumMessageSize = DefaultMessageSize
 	};
