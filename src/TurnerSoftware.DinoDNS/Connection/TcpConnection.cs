@@ -1,4 +1,5 @@
-﻿using System.Buffers.Binary;
+﻿using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -79,8 +80,49 @@ public class TcpConnectionClient : IDnsConnectionClient
 
 public class TcpConnectionServer : IDnsConnectionServer
 {
-	public Task ListenAsync(IPEndPoint endPoint, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
+	public async Task ListenAsync(IPEndPoint endPoint, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
 	{
-		throw new NotImplementedException();
+		var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+		socket.Listen();
+		
+		while (!cancellationToken.IsCancellationRequested)
+		{
+			var newSocket = await socket.AcceptAsync(cancellationToken).ConfigureAwait(false);
+			_ = HandleSocketAsync(newSocket, callback, options, cancellationToken).ConfigureAwait(false);
+		}
+	}
+
+	private static async Task HandleSocketAsync(Socket socket, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
+	{
+		//TODO: Investigate whether multiple requests can/should be handled at a time on a single socket.
+		//		Technically it should be possible in the same way the UDP server does it.
+
+		var rentedBytes = ArrayPool<byte>.Shared.Rent(options.MaximumMessageSize * 2);
+		try
+		{
+			var requestBuffer = rentedBytes.AsMemory(0, options.MaximumMessageSize);
+			var responseBuffer = rentedBytes.AsMemory(options.MaximumMessageSize);
+			while (true)
+			{
+				//Read the corresponding 2-byte length in the request to know how long the message is
+				await socket.ReceiveAsync(requestBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+				var messageLength = BinaryPrimitives.ReadUInt16BigEndian(requestBuffer.Span);
+				//Read the request based on the determined message length
+				await socket.ReceiveAsync(requestBuffer[..messageLength], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+
+				var bytesWritten = await callback(requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
+
+				//TCP connections require sending a 2-byte length value before the message.
+				//Use our request buffer as a temporary buffer to get and send the length.
+				BinaryPrimitives.WriteUInt16BigEndian(requestBuffer.Span, (ushort)bytesWritten);
+				await socket.SendAsync(requestBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+				//Send our main message from our response buffer	
+				await socket.SendAsync(responseBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+			}
+		}
+		finally
+		{
+			ArrayPool<byte>.Shared.Return(rentedBytes);
+		}
 	}
 }
