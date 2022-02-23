@@ -141,7 +141,7 @@ public class TcpConnectionServer : IDnsConnectionServer
 			var (requestBuffer, responseBuffer) = transitData;
 			var bytesWritten = await callback(requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
 			await writerLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-			await WriteResponseAsync(socket, responseBuffer, bytesWritten, cancellationToken).ConfigureAwait(false);
+			await WriteResponseAsync(socket, responseBuffer[..bytesWritten], cancellationToken).ConfigureAwait(false);
 		}
 		finally
 		{
@@ -160,16 +160,16 @@ public class TcpConnectionServer : IDnsConnectionServer
 		return messageLength;
 	}
 
-	protected virtual async ValueTask WriteResponseAsync(Socket socket, ReadOnlyMemory<byte> responseBuffer, int bytesWritten, CancellationToken cancellationToken)
+	protected virtual async ValueTask WriteResponseAsync(Socket socket, ReadOnlyMemory<byte> responseBuffer, CancellationToken cancellationToken)
 	{
 		var tempBuffer = ArrayPool<byte>.Shared.Rent(2);
 		try
 		{
 			//TCP connections require sending a 2-byte length value before the message.
-			BinaryPrimitives.WriteUInt16BigEndian(tempBuffer.AsSpan(), (ushort)bytesWritten);
+			BinaryPrimitives.WriteUInt16BigEndian(tempBuffer.AsSpan(), (ushort)responseBuffer.Length);
 			await socket.SendAsync(tempBuffer.AsMemory(0, 2), SocketFlags.None, cancellationToken).ConfigureAwait(false);
 			//Send the response message.
-			await socket.SendAsync(responseBuffer[..bytesWritten], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+			await socket.SendAsync(responseBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
 		}
 		finally
 		{
