@@ -167,5 +167,6 @@ public readonly struct DnsProtocolWriter
 		return writer;
 	}
 
-	public ReadOnlyMemory<byte> GetWrittenBytes() => SeekableDestination.Source[..SeekableDestination.Offset];
+	public int BytesWritten => SeekableDestination.Offset;
+	public ReadOnlyMemory<byte> GetWrittenBytes() => SeekableDestination.Source[..BytesWritten];
 }
