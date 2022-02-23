@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using System.Net.Sockets;
+using TurnerSoftware.DinoDNS.Connection;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS;
@@ -27,23 +28,18 @@ public sealed class DnsClient
 
 	public async ValueTask<DnsMessage> SendAsync(DnsMessage message, CancellationToken cancellationToken = default)
 	{
-		//We can't reuse the same buffer for sending and receiving as we may received an invalid payload back.
-		//This would then clear data that we'd want to try again and send.
-		//We can share the single instance of the buffer if we split it in half - this performs maginally faster than renting two arrays.
-		var readWriteBuffer = ArrayPool<byte>.Shared.Rent(Options.MaximumMessageSize * 2);
-		var sourceBuffer = readWriteBuffer.AsMemory(0, Options.MaximumMessageSize);
-		var destinationBuffer = readWriteBuffer.AsMemory(Options.MaximumMessageSize);
-
-		var writtenBytes = new DnsProtocolWriter(sourceBuffer).AppendMessage(message).GetWrittenBytes();
+		var transitData = TransitData.Rent(Options);
+		var responseBuffer = transitData.ResponseBuffer;
+		var writtenBytes = new DnsProtocolWriter(transitData.RequestBuffer).AppendMessage(message).GetWrittenBytes();
 
 		try
 		{
-			var bytesReceived = await SendAsync(writtenBytes, destinationBuffer, cancellationToken).ConfigureAwait(false);
+			var bytesReceived = await SendAsync(writtenBytes, responseBuffer, cancellationToken).ConfigureAwait(false);
 			if (bytesReceived >= Header.Length)
 			{
-				//We must allocate and copy the data to avoid use-after-free issues with the rented ArrayPool bytes.
+				//We must allocate and copy the data to avoid use-after-free issues with the rented bytes.
 				var returnSafeBuffer = new byte[bytesReceived].AsMemory();
-				destinationBuffer[..bytesReceived].CopyTo(returnSafeBuffer);
+				responseBuffer[..bytesReceived].CopyTo(returnSafeBuffer);
 
 				var reader = new DnsProtocolReader(returnSafeBuffer);
 				reader.ReadMessage(out var receivedMessage);
@@ -56,7 +52,7 @@ public sealed class DnsClient
 		}
 		finally
 		{
-			ArrayPool<byte>.Shared.Return(readWriteBuffer);
+			TransitData.Return(transitData);
 		}
 	}
 
