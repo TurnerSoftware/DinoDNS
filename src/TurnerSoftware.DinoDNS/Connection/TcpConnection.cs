@@ -77,12 +77,14 @@ public class TcpConnectionClient : IDnsConnectionClient
 	}
 }
 
-
 public class TcpConnectionServer : IDnsConnectionServer
 {
+	public static readonly TcpConnectionServer Instance = new();
+
 	public async Task ListenAsync(IPEndPoint endPoint, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
 	{
 		var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+		socket.Bind(endPoint);
 		socket.Listen();
 		
 		while (!cancellationToken.IsCancellationRequested)
@@ -92,37 +94,86 @@ public class TcpConnectionServer : IDnsConnectionServer
 		}
 	}
 
-	private static async Task HandleSocketAsync(Socket socket, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
+	private async Task HandleSocketAsync(Socket socket, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
 	{
-		//TODO: Investigate whether multiple requests can/should be handled at a time on a single socket.
-		//		Technically it should be possible in the same way the UDP server does it.
-
-		var rentedBytes = ArrayPool<byte>.Shared.Rent(options.MaximumMessageSize * 2);
 		try
 		{
-			var requestBuffer = rentedBytes.AsMemory(0, options.MaximumMessageSize);
-			var responseBuffer = rentedBytes.AsMemory(options.MaximumMessageSize);
+			using var writerLock = new SemaphoreSlim(1);
 			while (true)
 			{
-				//Read the corresponding 2-byte length in the request to know how long the message is
-				await socket.ReceiveAsync(requestBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
-				var messageLength = BinaryPrimitives.ReadUInt16BigEndian(requestBuffer.Span);
-				//Read the request based on the determined message length
-				await socket.ReceiveAsync(requestBuffer[..messageLength], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+				var transitData = TransitData.Rent(options);
+				var hasReadData = false;
+				try
+				{
+					var bytesRead = await ReadRequestAsync(socket, transitData.RequestBuffer, cancellationToken).ConfigureAwait(false);
+					if (bytesRead == 0)
+					{
+						socket.Shutdown(SocketShutdown.Both);
+						socket.Dispose();
+						return;
+					}
 
-				var bytesWritten = await callback(requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
-
-				//TCP connections require sending a 2-byte length value before the message.
-				//Use our request buffer as a temporary buffer to get and send the length.
-				BinaryPrimitives.WriteUInt16BigEndian(requestBuffer.Span, (ushort)bytesWritten);
-				await socket.SendAsync(requestBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
-				//Send our main message from our response buffer	
-				await socket.SendAsync(responseBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+					hasReadData = true;
+					_ = HandleRequestAsync(socket, callback, transitData, writerLock, cancellationToken).ConfigureAwait(false);
+				}
+				finally
+				{
+					if (!hasReadData)
+					{
+						//Returning transit data only when data hasn't been read.
+						//Once data has been read, the responsibility for returning the data belongs in the request handling.
+						TransitData.Return(transitData);
+					}
+				}
 			}
+		}
+		catch (Exception ex)
+		{
+			//TODO: Logger
+			Console.WriteLine($"Socket:{ex.Message}");
+		}
+	}
+
+	private async Task HandleRequestAsync(Socket socket, OnDnsQueryCallback callback, TransitData transitData, SemaphoreSlim writerLock, CancellationToken cancellationToken)
+	{
+		try
+		{
+			var (requestBuffer, responseBuffer) = transitData;
+			var bytesWritten = await callback(requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
+			await writerLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+			await WriteResponseAsync(socket, responseBuffer, bytesWritten, cancellationToken).ConfigureAwait(false);
 		}
 		finally
 		{
-			ArrayPool<byte>.Shared.Return(rentedBytes);
+			TransitData.Return(transitData);
+			writerLock.Release();
+		}
+	}
+
+	protected virtual async ValueTask<int> ReadRequestAsync(Socket socket, Memory<byte> requestBuffer, CancellationToken cancellationToken)
+	{
+		//Read the corresponding 2-byte length in the request to know how long the message is
+		await socket.ReceiveAsync(requestBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		var messageLength = BinaryPrimitives.ReadUInt16BigEndian(requestBuffer.Span);
+		//Read the request based on the determined message length
+		await socket.ReceiveAsync(requestBuffer[..messageLength], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		return messageLength;
+	}
+
+	protected virtual async ValueTask WriteResponseAsync(Socket socket, ReadOnlyMemory<byte> responseBuffer, int bytesWritten, CancellationToken cancellationToken)
+	{
+		var tempBuffer = ArrayPool<byte>.Shared.Rent(2);
+		try
+		{
+			//TCP connections require sending a 2-byte length value before the message.
+			BinaryPrimitives.WriteUInt16BigEndian(tempBuffer.AsSpan(), (ushort)bytesWritten);
+			await socket.SendAsync(tempBuffer.AsMemory(0, 2), SocketFlags.None, cancellationToken).ConfigureAwait(false);
+			//Send the response message.
+			await socket.SendAsync(responseBuffer[..bytesWritten], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		}
+		finally
+		{
+			ArrayPool<byte>.Shared.Return(tempBuffer);
 		}
 	}
 }
