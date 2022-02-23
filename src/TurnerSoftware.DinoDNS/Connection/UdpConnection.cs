@@ -45,24 +45,22 @@ public sealed class UdpConnectionServer : IDnsConnectionServer
 
 		while (!cancellationToken.IsCancellationRequested)
 		{
-			var rentedBytes = ArrayPool<byte>.Shared.Rent(options.MaximumMessageSize * 2);
-			var requestBuffer = rentedBytes.AsMemory(0, options.MaximumMessageSize);
-			var socketReceived = await socket.ReceiveFromAsync(requestBuffer, SocketFlags.None, endPoint, cancellationToken).ConfigureAwait(false);
-			_ = HandleRequestAsync(socket, rentedBytes, socketReceived, callback, options, cancellationToken).ConfigureAwait(false);
+			var transitData = TransitData.Rent(options);
+			var socketReceived = await socket.ReceiveFromAsync(transitData.RequestBuffer, SocketFlags.None, endPoint, cancellationToken).ConfigureAwait(false);
+			_ = HandleRequestAsync(socket, transitData, socketReceived, callback, options, cancellationToken).ConfigureAwait(false);
 		}
 
-		static async Task HandleRequestAsync(Socket socket, byte[] rentedBytes, SocketReceiveFromResult socketReceived, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
+		static async Task HandleRequestAsync(Socket socket, TransitData transitData, SocketReceiveFromResult socketReceived, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
 		{
 			try
 			{
-				var requestBuffer = rentedBytes.AsMemory(0, options.MaximumMessageSize);
-				var responseBuffer = rentedBytes.AsMemory(options.MaximumMessageSize);
+				var (requestBuffer, responseBuffer) = transitData;
 				var bytesWritten = await callback(requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
-				await socket.SendToAsync(responseBuffer, SocketFlags.None, socketReceived.RemoteEndPoint, cancellationToken).ConfigureAwait(false);
+				await socket.SendToAsync(transitData.ResponseBuffer, SocketFlags.None, socketReceived.RemoteEndPoint, cancellationToken).ConfigureAwait(false);
 			}
 			finally
 			{
-				ArrayPool<byte>.Shared.Return(rentedBytes);
+				TransitData.Return(transitData);
 			}
 		}
 	}
