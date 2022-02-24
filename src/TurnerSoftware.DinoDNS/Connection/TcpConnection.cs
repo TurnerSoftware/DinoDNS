@@ -45,7 +45,7 @@ public class TcpConnectionClient : IDnsConnectionClient
 
 		if (!socket.Connected)
 		{
-			await socket.ConnectAsync(endPoint).ConfigureAwait(false);
+			await socket.ConnectAsync(endPoint, cancellationToken).ConfigureAwait(false);
 			await OnConnectAsync(socket, endPoint, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -86,7 +86,7 @@ public class TcpConnectionServer : IDnsConnectionServer
 		var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 		socket.Bind(endPoint);
 		socket.Listen();
-		
+
 		while (!cancellationToken.IsCancellationRequested)
 		{
 			var newSocket = await socket.AcceptAsync(cancellationToken).ConfigureAwait(false);
@@ -98,6 +98,7 @@ public class TcpConnectionServer : IDnsConnectionServer
 	{
 		try
 		{
+			await OnConnectAsync(socket, cancellationToken).ConfigureAwait(false);
 			using var writerLock = new SemaphoreSlim(1);
 			while (true)
 			{
@@ -132,6 +133,10 @@ public class TcpConnectionServer : IDnsConnectionServer
 			//TODO: Logger
 			Console.WriteLine($"Socket:{ex.Message}");
 		}
+		finally
+		{
+			OnSocketEnd(socket);
+		}
 	}
 
 	private async Task HandleRequestAsync(Socket socket, OnDnsQueryCallback callback, TransitData transitData, SemaphoreSlim writerLock, CancellationToken cancellationToken)
@@ -149,6 +154,9 @@ public class TcpConnectionServer : IDnsConnectionServer
 			writerLock.Release();
 		}
 	}
+
+	protected virtual ValueTask OnConnectAsync(Socket socket, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+	protected virtual void OnSocketEnd(Socket socket) { }
 
 	protected virtual async ValueTask<int> ReadRequestAsync(Socket socket, Memory<byte> requestBuffer, CancellationToken cancellationToken)
 	{
