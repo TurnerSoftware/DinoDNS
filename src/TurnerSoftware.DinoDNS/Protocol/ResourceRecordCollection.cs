@@ -3,7 +3,7 @@ using TurnerSoftware.DinoDNS.Internal;
 
 namespace TurnerSoftware.DinoDNS.Protocol;
 
-public readonly struct ResourceRecordCollection
+public readonly struct ResourceRecordCollection : IEquatable<ResourceRecordCollection>
 {
 	private readonly int ItemCount;
 	private readonly SeekableReadOnlyMemory<byte> ByteValue;
@@ -27,10 +27,35 @@ public readonly struct ResourceRecordCollection
 	}
 
 	public int Count => ItemCount;
+	public bool Equals(ResourceRecordCollection other)
+	{
+		if (Count != other.Count)
+		{
+			return false;
+		}
 
+		var enumerator = GetEnumerator();
+		var otherEnumerator = other.GetEnumerator();
+
+		while (enumerator.MoveNext() && otherEnumerator.MoveNext())
+		{
+			if (!enumerator.Current.Equals(otherEnumerator.Current))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public override bool Equals(object? obj) => obj is ResourceRecordCollection collection && Equals(collection);
+
+	public override int GetHashCode() => ItemCount.GetHashCode();
 	public Enumerator GetEnumerator() => new(this);
 
 	public static implicit operator ResourceRecordCollection(ResourceRecord[] value) => new(value);
+	public static bool operator ==(ResourceRecordCollection left, ResourceRecordCollection right) => left.Equals(right);
+	public static bool operator !=(ResourceRecordCollection left, ResourceRecordCollection right) => !(left == right);
 
 	public struct Enumerator : IEnumerator<ResourceRecord>
 	{

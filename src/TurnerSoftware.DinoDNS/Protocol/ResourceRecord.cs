@@ -16,7 +16,17 @@ public readonly record struct ResourceRecord(
 	uint TimeToLive,
 	ushort ResourceDataLength,
 	ReadOnlyMemory<byte> Data
-)
+) : IEquatable<ResourceRecord>
 {
+	public bool Equals(ResourceRecord other) => 
+		DomainName.Equals(other.DomainName) &&
+		Type == other.Type &&
+		Class == other.Class &&
+		TimeToLive == other.TimeToLive &&
+		ResourceDataLength == other.ResourceDataLength &&
+		Data.Span.SequenceEqual(other.Data.Span);
+
+	public override int GetHashCode() => HashCode.Combine(DomainName, Type, Class, TimeToLive, ResourceDataLength, Data);
+
 	public override string ToString() => $"DomainName:{DomainName.ToString()},Type:{Type},CLASS:{Class},TTL:{TimeToLive},Length:{ResourceDataLength}";
 }

@@ -6,7 +6,7 @@ using TurnerSoftware.DinoDNS.Internal;
 
 namespace TurnerSoftware.DinoDNS.Protocol;
 
-public readonly partial struct LabelSequence
+public readonly partial struct LabelSequence : IEquatable<LabelSequence>
 {
 	private readonly SeekableReadOnlyMemory<byte> ByteValue;
 	private readonly ReadOnlyMemory<char> CharValue;
@@ -114,6 +114,22 @@ public readonly partial struct LabelSequence
 		//Add the final 0-length label byte
 		sequenceLength += 1;
 		return sequenceLength;
+	}
+
+	public bool Equals(LabelSequence other)
+	{
+		var enumerator = GetEnumerator();
+		var otherEnumerator = other.GetEnumerator();
+
+		while (enumerator.MoveNext() && otherEnumerator.MoveNext())
+		{
+			if (!enumerator.Current.Equals(otherEnumerator.Current))
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	public override string ToString()

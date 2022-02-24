@@ -4,7 +4,7 @@ namespace TurnerSoftware.DinoDNS.Protocol;
 
 public readonly partial struct LabelSequence
 {
-	public readonly struct Label
+	public readonly struct Label : IEquatable<Label>
 	{
 		public const int MaxLength = 63;
 
@@ -68,14 +68,18 @@ public readonly partial struct LabelSequence
 		{
 			if (!other.ByteValue.IsEmpty)
 			{
-				return Equals(other.ByteValue);
+				return Equals(other.ByteValue.Span);
 			}
 			else if (!other.CharValue.IsEmpty)
 			{
-				return Equals(other.CharValue);
+				return Equals(other.CharValue.Span);
 			}
 			return Length == 0;
 		}
+
+		public override bool Equals(object? obj) => obj is Label label && Equals(label);
+
+		public override int GetHashCode() => HashCode.Combine(ByteValue, CharValue, FromPointerOffset);
 
 		public ReadOnlySpan<byte> ToBytes()
 		{
@@ -128,5 +132,7 @@ public readonly partial struct LabelSequence
 
 		public static implicit operator Label(string source) => new(source.AsMemory());
 		public static implicit operator Label(ReadOnlyMemory<char> source) => new(source);
+		public static bool operator ==(Label left, Label right) => left.Equals(right);
+		public static bool operator !=(Label left, Label right) => !(left == right);
 	}
 }
