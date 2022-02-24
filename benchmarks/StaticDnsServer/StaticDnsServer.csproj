@@ -10,6 +10,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\TurnerSoftware.DinoDNS\TurnerSoftware.DinoDNS.csproj" />
+		<ProjectReference Include="..\..\tests\TurnerSoftware.DinoDNS.TestServer\TurnerSoftware.DinoDNS.TestServer.csproj" />
 	</ItemGroup>
 
 </Project>
