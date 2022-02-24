@@ -29,6 +29,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{A096D6
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StaticDnsServer", "benchmarks\StaticDnsServer\StaticDnsServer.csproj", "{7A163C84-5039-4973-B808-D4AFFCDA6DC0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TurnerSoftware.DinoDNS.TestServer", "tests\TurnerSoftware.DinoDNS.TestServer\TurnerSoftware.DinoDNS.TestServer.csproj", "{CDC049F9-ECC3-40EC-BC40-E3C14F17DC8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,10 @@ Global
 		{7A163C84-5039-4973-B808-D4AFFCDA6DC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A163C84-5039-4973-B808-D4AFFCDA6DC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A163C84-5039-4973-B808-D4AFFCDA6DC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDC049F9-ECC3-40EC-BC40-E3C14F17DC8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDC049F9-ECC3-40EC-BC40-E3C14F17DC8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDC049F9-ECC3-40EC-BC40-E3C14F17DC8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDC049F9-ECC3-40EC-BC40-E3C14F17DC8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -65,6 +71,7 @@ Global
 		{37EAF37C-900F-4B30-90F8-37C420EB74ED} = {8E433D5C-5DDB-4486-85F9-03299A9DB172}
 		{11BED4F7-B487-40B4-AF1D-6E315B413006} = {593D09FA-7858-4252-AD34-DFA52F8C0BB8}
 		{7A163C84-5039-4973-B808-D4AFFCDA6DC0} = {593D09FA-7858-4252-AD34-DFA52F8C0BB8}
+		{CDC049F9-ECC3-40EC-BC40-E3C14F17DC8C} = {8E433D5C-5DDB-4486-85F9-03299A9DB172}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A5B49E2E-EBD4-4D11-AA46-DB1401B23880}
