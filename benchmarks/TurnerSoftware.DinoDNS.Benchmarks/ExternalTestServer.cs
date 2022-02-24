@@ -9,6 +9,7 @@ internal static class ExternalTestServer
 
 	public static void StartUdp() => Start("udp");
 	public static void StartTcp() => Start("tcp");
+	public static void StartTls() => Start("tls");
 
 	private static void Start(string arguments)
 	{

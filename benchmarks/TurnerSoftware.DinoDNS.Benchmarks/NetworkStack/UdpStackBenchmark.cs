@@ -1,17 +1,10 @@
 ﻿using BenchmarkDotNet.Attributes;
-using System.Net;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS.Benchmarks.NetworkStack;
 
-[Config(typeof(DefaultBenchmarkConfig))]
-public class UdpStackBenchmark
+public class UdpStackBenchmark : NetworkStackBenchmark
 {
-	private byte[]? RawMessage;
-
-	private DnsClient? DinoDNS_DnsClient;
-	private DnsMessage DinoDNS_Message;
-
 	private DNS.Client.DnsClient? Kapetan_DNS_DnsClient;
 	private DNS.Client.ClientRequest? Kapetan_DNS_ClientRequest;
 
@@ -19,39 +12,17 @@ public class UdpStackBenchmark
 	private global::DnsClient.DnsQuestion? MichaCo_DnsClient_DnsQuestion;
 
 	[GlobalSetup]
-	public void Setup()
+	public override void Setup()
 	{
-		var requestMessage = DnsMessage.CreateQuery(44124)
-			.WithQuestions(new Question[]
-			{
-				new()
-				{
-					Query = new LabelSequence("test.www.example.org"),
-					Type = DnsQueryType.A,
-					Class = DnsClass.IN
-				}
-			});
-
-		var buffer = new byte[1024];
-		var messageBytes = new DnsProtocolWriter(buffer.AsMemory())
-			.AppendMessage(requestMessage)
-			.GetWrittenBytes()
-			.ToArray();
-
-		RawMessage = messageBytes;
-
-		var testEndpoint = new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 53);
-
-		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(testEndpoint, ConnectionType.Udp) }, DnsMessageOptions.Default);
-		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(new DNS.Client.RequestResolver.UdpRequestResolver(testEndpoint));
-		MichaCo_DnsClient_LookupClient = new global::DnsClient.LookupClient(new global::DnsClient.LookupClientOptions(testEndpoint)
+		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(ServerEndPoint, ConnectionType.Udp) }, DnsMessageOptions.Default);
+		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(new DNS.Client.RequestResolver.UdpRequestResolver(ServerEndPoint));
+		MichaCo_DnsClient_LookupClient = new global::DnsClient.LookupClient(new global::DnsClient.LookupClientOptions(ServerEndPoint)
 		{
 			UseCache = false
 		});
 
 		ExternalTestServer.StartUdp();
 
-		DinoDNS_Message = requestMessage;
 		Kapetan_DNS_ClientRequest = Kapetan_DNS_DnsClient.FromArray(RawMessage);
 		MichaCo_DnsClient_DnsQuestion = new global::DnsClient.DnsQuestion("test.www.example.org", global::DnsClient.QueryType.A);
 	}
