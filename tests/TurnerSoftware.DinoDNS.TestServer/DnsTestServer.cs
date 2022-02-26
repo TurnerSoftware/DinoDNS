@@ -17,32 +17,37 @@ public class DnsTestServer
 
 	private CancellationTokenSource CancellationTokenSource = new();
 
-	private void ResetCancellationToken(CancellationToken cancellationToken)
-	{
-		CancellationTokenSource.Cancel();
-		CancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-	}
+	private readonly List<Task> StartedTasks = new();
 
-	public IDisposable Run(IDnsConnectionServer server, Func<DnsMessage, DnsMessage> getResponse)
+	public IAsyncDisposable Run(IDnsConnectionServer server, Func<DnsMessage, DnsMessage> getResponse)
 	{
-		_ = StartAsync(server, getResponse);
+		StartedTasks.Add(StartAsync(server, getResponse));
 		return new Disposable(this);
 	}
 	public async Task StartAsync(IDnsConnectionServer server, Func<DnsMessage, DnsMessage> getResponse, CancellationToken cancellationToken = default)
 	{
-		ResetCancellationToken(cancellationToken);
-		await server.ListenAsync(ServerEndPoint, (requestBuffer, responseBuffer, token) =>
+		await StopAsync();
+		CancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+		try
 		{
-			new DnsProtocolReader(requestBuffer).ReadMessage(out var message);
-			var responseMessage = getResponse(message);
-			var writer = new DnsProtocolWriter(responseBuffer).AppendMessage(responseMessage);
-			return ValueTask.FromResult(writer.BytesWritten);
-		}, DnsMessageOptions.Default, CancellationTokenSource.Token);
+			await server.ListenAsync(ServerEndPoint, (requestBuffer, responseBuffer, token) =>
+			{
+				new DnsProtocolReader(requestBuffer).ReadMessage(out var message);
+				var responseMessage = getResponse(message);
+				var writer = new DnsProtocolWriter(responseBuffer).AppendMessage(responseMessage);
+				return ValueTask.FromResult(writer.BytesWritten);
+			}, DnsMessageOptions.Default, CancellationTokenSource.Token);
+		}
+		catch (OperationCanceledException) 
+		{ 
+		}
 	}
 
-	public void Stop()
+	public async ValueTask StopAsync()
 	{
 		CancellationTokenSource.Cancel();
+		await Task.WhenAll(StartedTasks);
+		StartedTasks.Clear();
 	}
 
 	public static X509Certificate2 CreateTemporaryCertificate()
@@ -83,7 +88,7 @@ public class DnsTestServer
 			});
 	}
 
-	private struct Disposable : IDisposable
+	private struct Disposable : IAsyncDisposable
 	{
 		private readonly DnsTestServer Server;
 
@@ -92,9 +97,9 @@ public class DnsTestServer
 			Server = server;
 		}
 
-		public void Dispose()
+		public async ValueTask DisposeAsync()
 		{
-			Server.Stop();
+			await Server.StopAsync();
 		}
 	}
 }

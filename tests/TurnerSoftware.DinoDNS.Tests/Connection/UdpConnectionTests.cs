@@ -8,21 +8,21 @@ using TurnerSoftware.DinoDNS.TestServer;
 namespace TurnerSoftware.DinoDNS.Tests.Connection;
 
 [TestClass]
-public class HttpsConnectionTests
+public class UdpConnectionTests
 {
 	public static IAsyncDisposable RunTestServer(Func<DnsMessage, DnsMessage> getResponse)
 	{
-		return DnsTestServer.Instance.Run(new HttpsConnectionServer(DnsTestServer.CreateTemporaryCertificate()), getResponse);
+		return DnsTestServer.Instance.Run(new UdpConnectionServer(), getResponse);
 	}
 
 	[TestMethod]
-	public async Task BasicHttps()
+	public async Task BasicTcp()
 	{
 		await using var _ = RunTestServer(request => DnsTestServer.ExampleData.Response);
 
 		var client = new DnsClient(new NameServer[]
 		{
-			new(DnsTestServer.ClientEndPoint, new HttpsConnectionClient(HttpConnectionClientOptions.Insecure)) 
+			new(DnsTestServer.ClientEndPoint, new UdpConnectionClient()) 
 		}, DnsMessageOptions.Default);
 
 		var response = await client.SendAsync(DnsTestServer.ExampleData.Request);

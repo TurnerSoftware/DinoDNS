@@ -10,7 +10,7 @@ namespace TurnerSoftware.DinoDNS.Tests.Connection;
 [TestClass]
 public class TlsConnectionTests
 {
-	public static IDisposable RunTestServer(Func<DnsMessage, DnsMessage> getResponse)
+	public static IAsyncDisposable RunTestServer(Func<DnsMessage, DnsMessage> getResponse)
 	{
 		return DnsTestServer.Instance.Run(new TlsConnectionServer(new System.Net.Security.SslServerAuthenticationOptions
 		{
@@ -21,7 +21,7 @@ public class TlsConnectionTests
 	[TestMethod]
 	public async Task BasicTls()
 	{
-		using var _ = RunTestServer(request => DnsTestServer.ExampleData.Response);
+		await using var _ = RunTestServer(request => DnsTestServer.ExampleData.Response);
 
 		var client = new DnsClient(new NameServer[]
 		{
