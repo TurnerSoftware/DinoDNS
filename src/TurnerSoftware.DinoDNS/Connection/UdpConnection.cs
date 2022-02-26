@@ -40,7 +40,7 @@ public sealed class UdpConnectionServer : IDnsConnectionServer
 
 	public async Task ListenAsync(IPEndPoint endPoint, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
 	{
-		var socket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+		using var socket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 		socket.Bind(endPoint);
 
 		while (!cancellationToken.IsCancellationRequested)

@@ -83,7 +83,7 @@ public class TcpConnectionServer : IDnsConnectionServer
 
 	public async Task ListenAsync(IPEndPoint endPoint, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
 	{
-		var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+		using var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 		socket.Bind(endPoint);
 		socket.Listen();
 
