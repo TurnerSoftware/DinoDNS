@@ -25,6 +25,10 @@ try
 				ServerCertificate = DnsTestServer.CreateTemporaryCertificate()
 			});
 			break;
+		case "https":
+			Console.WriteLine("HTTPS server started!");
+			server = new HttpsConnectionServer(DnsTestServer.CreateTemporaryCertificate());
+			break;
 		case "udp":
 		default:
 			Console.WriteLine("UDP server started!");
