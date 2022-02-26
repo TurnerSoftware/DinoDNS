@@ -14,6 +14,8 @@ public class UdpStackBenchmark : NetworkStackBenchmark
 	[GlobalSetup]
 	public override void Setup()
 	{
+		base.Setup();
+
 		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(ServerEndPoint, ConnectionType.Udp) }, DnsMessageOptions.Default);
 		Kapetan_DNS_DnsClient = new DNS.Client.DnsClient(new DNS.Client.RequestResolver.UdpRequestResolver(ServerEndPoint));
 		MichaCo_DnsClient_LookupClient = new global::DnsClient.LookupClient(new global::DnsClient.LookupClientOptions(ServerEndPoint)
