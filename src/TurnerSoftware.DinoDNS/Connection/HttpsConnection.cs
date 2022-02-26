@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace TurnerSoftware.DinoDNS.Connection;
 
@@ -89,6 +90,8 @@ public sealed class HttpsConnectionServer : IDnsConnectionServer
 	public async Task ListenAsync(IPEndPoint endPoint, OnDnsQueryCallback callback, DnsMessageOptions options, CancellationToken cancellationToken)
 	{
 		var builder = WebApplication.CreateBuilder();
+		builder.Logging.ClearProviders();
+
 		builder.Services.AddSingleton(callback);
 		builder.WebHost.ConfigureKestrel(options =>
 		{
