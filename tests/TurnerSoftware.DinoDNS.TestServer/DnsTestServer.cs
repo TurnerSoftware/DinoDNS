@@ -45,14 +45,14 @@ public class DnsTestServer
 		CancellationTokenSource.Cancel();
 	}
 
-	public static X509Certificate CreateTemporaryCertificate()
+	public static X509Certificate2 CreateTemporaryCertificate()
 	{
 		var ecdsa = ECDsa.Create(ECCurve.CreateFromValue("1.2.840.10045.3.1.7"));
 		var certRequest = new CertificateRequest("CN=127.0.0.1", ecdsa, HashAlgorithmName.SHA256);
 		var beforeDate = DateTime.Now.AddHours(-1);
 		var afterDate = beforeDate.AddHours(2);
 		var generatedCert = certRequest.CreateSelfSigned(beforeDate, afterDate);
-		return new X509Certificate(generatedCert.Export(X509ContentType.Pfx));
+		return new X509Certificate2(generatedCert.Export(X509ContentType.Pfx));
 	}
 
 	public sealed class ExampleData
