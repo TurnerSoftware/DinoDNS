@@ -37,11 +37,11 @@ The server implementation that each benchmark is performing against is Dino DNS.
 This is your typical DNS query.
 While fast and efficient, it is limited by the lack of transport-layer encryption, reliable delivery and message length.
 
-|            Method |      Mean |     Error |    StdDev |     Op/s | Ratio | RatioSD |   Gen 0 | Allocated |
-|------------------ |----------:|----------:|----------:|---------:|------:|--------:|--------:|----------:|
-|           DinoDNS |  97.89 us |  1.930 us |  3.577 us | 10,215.4 |  1.00 |    0.00 |  0.8545 |   2,864 B |
-|       Kapetan_DNS | 347.28 us | 10.655 us | 31.418 us |  2,879.5 |  3.60 |    0.46 | 23.9258 |  75,150 B |
-| MichaCo_DnsClient | 114.71 us |  1.897 us |  1.774 us |  8,717.5 |  1.18 |    0.05 |  1.4648 |   4,663 B |
+|            Method |      Mean |    Error |    StdDev |     Op/s | Ratio | RatioSD |   Gen 0 | Allocated |
+|------------------ |----------:|---------:|----------:|---------:|------:|--------:|--------:|----------:|
+|           DinoDNS |  94.18 us | 1.812 us |  2.420 us | 10,618.3 |  1.00 |    0.00 |  0.4883 |   1,712 B |
+|       Kapetan_DNS | 309.60 us | 6.167 us | 13.536 us |  3,230.0 |  3.26 |    0.15 | 23.4375 |  73,996 B |
+| MichaCo_DnsClient | 108.00 us | 2.092 us |  2.054 us |  9,259.7 |  1.15 |    0.04 |  1.4648 |   4,664 B |
 
 ### DNS-over-TCP
 
@@ -85,7 +85,7 @@ This can disguise DNS traffic when performed over port 443 (the default port for
 ```csharp
 var client = new DnsClient(new NameServer[]
 {
-	NameServers.Cloudflare.IPv4.GetPrimary(ConnectionType.Udp)
+    NameServers.Cloudflare.IPv4.GetPrimary(ConnectionType.Udp)
 }, DnsMessageOptions.Default);
 
 var dnsMessage = await client.QueryAsync("example.org", DnsQueryType.A);
