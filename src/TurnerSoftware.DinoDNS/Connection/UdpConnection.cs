@@ -56,7 +56,7 @@ public sealed class UdpConnectionServer : IDnsConnectionServer
 			{
 				var (requestBuffer, responseBuffer) = transitData;
 				var bytesWritten = await callback(requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
-				await socket.SendToAsync(transitData.ResponseBuffer, SocketFlags.None, socketReceived.RemoteEndPoint, cancellationToken).ConfigureAwait(false);
+				await socket.SendToAsync(transitData.ResponseBuffer[..bytesWritten], SocketFlags.None, socketReceived.RemoteEndPoint, cancellationToken).ConfigureAwait(false);
 			}
 			finally
 			{
