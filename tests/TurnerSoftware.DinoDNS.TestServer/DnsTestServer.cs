@@ -62,30 +62,36 @@ public class DnsTestServer
 
 	public sealed class ExampleData
 	{
-		public static DnsMessage Request => DnsMessage.CreateQuery(44124)
-			.WithQuestions(new Question[]
-			{
-				new()
-				{
-					Query = new LabelSequence("test.www.example.org"),
-					Type = DnsQueryType.A,
-					Class = DnsClass.IN
-				}
-			});
+		public static readonly DnsMessage Request;
+		public static readonly DnsMessage Response;
 
-		public static DnsMessage Response => DnsMessage.CreateResponse(Request, ResponseCode.NOERROR)
-			.WithAnswers(new ResourceRecord[]
-			{
-				new()
+		static ExampleData()
+		{
+			Request = DnsMessage.CreateQuery(44124)
+				.WithQuestions(new Question[]
 				{
-					DomainName = new LabelSequence("test.www.example.org"),
-					Type = DnsType.A,
-					Class = DnsClass.IN,
-					TimeToLive = 1800,
-					ResourceDataLength = 4,
-					Data = new byte[] { 192, 168, 0, 1 }
-				}
-			});
+					new()
+					{
+						Query = new LabelSequence("test.www.example.org"),
+						Type = DnsQueryType.A,
+						Class = DnsClass.IN
+					}
+				});
+
+			Response = DnsMessage.CreateResponse(Request, ResponseCode.NOERROR)
+				.WithAnswers(new ResourceRecord[]
+				{
+					new()
+					{
+						DomainName = new LabelSequence("test.www.example.org"),
+						Type = DnsType.A,
+						Class = DnsClass.IN,
+						TimeToLive = 1800,
+						ResourceDataLength = 4,
+						Data = new byte[] { 192, 168, 0, 1 }
+					}
+				});
+		}
 	}
 
 	private struct Disposable : IAsyncDisposable
