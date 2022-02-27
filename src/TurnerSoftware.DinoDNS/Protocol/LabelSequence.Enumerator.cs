@@ -14,7 +14,7 @@ public readonly partial struct LabelSequence
 		private int Index;
 
 		public Label Current { get; private set; }
-		object IEnumerator.Current => Current;
+		readonly object IEnumerator.Current => Current;
 
 		internal Enumerator(LabelSequence value)
 		{
@@ -89,7 +89,7 @@ public readonly partial struct LabelSequence
 			Current = default;
 		}
 
-		public void Dispose()
+		public readonly void Dispose()
 		{
 		}
 	}

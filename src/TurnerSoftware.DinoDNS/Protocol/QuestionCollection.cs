@@ -56,8 +56,8 @@ public readonly struct QuestionCollection : IEquatable<QuestionCollection>
 	public Enumerator GetEnumerator() => new(this);
 
 	public static implicit operator QuestionCollection(Question[] value) => new(value);
-	public static bool operator ==(QuestionCollection left, QuestionCollection right) => left.Equals(right);
-	public static bool operator !=(QuestionCollection left, QuestionCollection right) => !(left == right);
+	public static bool operator ==(in QuestionCollection left, in QuestionCollection right) => left.Equals(right);
+	public static bool operator !=(in QuestionCollection left, in QuestionCollection right) => !(left == right);
 
 	public struct Enumerator : IEnumerator<Question>
 	{
@@ -75,7 +75,7 @@ public readonly struct QuestionCollection : IEquatable<QuestionCollection>
 
 		public Question Current { get; private set; }
 
-		object IEnumerator.Current => Current;
+		readonly object IEnumerator.Current => Current;
 
 		public bool MoveNext()
 		{
@@ -105,7 +105,7 @@ public readonly struct QuestionCollection : IEquatable<QuestionCollection>
 			Reader = Value.IsByteSequence ? new DnsProtocolReader(Value.ByteValue) : default;
 		}
 
-		public void Dispose()
+		public readonly void Dispose()
 		{
 		}
 	}

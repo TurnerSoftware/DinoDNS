@@ -54,8 +54,8 @@ public readonly struct ResourceRecordCollection : IEquatable<ResourceRecordColle
 	public Enumerator GetEnumerator() => new(this);
 
 	public static implicit operator ResourceRecordCollection(ResourceRecord[] value) => new(value);
-	public static bool operator ==(ResourceRecordCollection left, ResourceRecordCollection right) => left.Equals(right);
-	public static bool operator !=(ResourceRecordCollection left, ResourceRecordCollection right) => !(left == right);
+	public static bool operator ==(in ResourceRecordCollection left, in ResourceRecordCollection right) => left.Equals(right);
+	public static bool operator !=(in ResourceRecordCollection left, in ResourceRecordCollection right) => !(left == right);
 
 	public struct Enumerator : IEnumerator<ResourceRecord>
 	{
@@ -73,7 +73,7 @@ public readonly struct ResourceRecordCollection : IEquatable<ResourceRecordColle
 
 		public ResourceRecord Current { get; private set; }
 
-		object IEnumerator.Current => Current;
+		readonly object IEnumerator.Current => Current;
 
 		public bool MoveNext()
 		{
@@ -103,7 +103,7 @@ public readonly struct ResourceRecordCollection : IEquatable<ResourceRecordColle
 			Reader = Value.IsByteSequence ? new DnsProtocolReader(Value.ByteValue) : default;
 		}
 
-		public void Dispose()
+		public readonly void Dispose()
 		{
 		}
 	}
