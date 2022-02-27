@@ -15,6 +15,6 @@ public class DnsForwardingServer : DnsServerBase
 
 	protected override async ValueTask<int> OnReceiveAsync(ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken)
 	{
-		return await Client.SendAsync(requestBuffer, responseBuffer, cancellationToken);
+		return await Client.SendAsync(requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
 	}
 }
