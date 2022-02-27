@@ -2,7 +2,7 @@
 
 public static class DnsMessageExtensions
 {
-	public static DnsMessage WithQuestions(this DnsMessage message, Question[] questions)
+	public static DnsMessage WithQuestions(this in DnsMessage message, Question[] questions)
 	{
 		return message with
 		{
@@ -14,7 +14,7 @@ public static class DnsMessageExtensions
 		};
 	}
 
-	public static DnsMessage WithAnswers(this DnsMessage message, ResourceRecord[] answers)
+	public static DnsMessage WithAnswers(this in DnsMessage message, ResourceRecord[] answers)
 	{
 		return message with
 		{
@@ -26,7 +26,7 @@ public static class DnsMessageExtensions
 		};
 	}
 
-	public static DnsMessage WithAuthorities(this DnsMessage message, ResourceRecord[] authorities)
+	public static DnsMessage WithAuthorities(this in DnsMessage message, ResourceRecord[] authorities)
 	{
 		return message with
 		{
@@ -38,7 +38,7 @@ public static class DnsMessageExtensions
 		};
 	}
 
-	public static DnsMessage WithAdditionalRecords(this DnsMessage message, ResourceRecord[] additionalRecords)
+	public static DnsMessage WithAdditionalRecords(this in DnsMessage message, ResourceRecord[] additionalRecords)
 	{
 		return message with
 		{
