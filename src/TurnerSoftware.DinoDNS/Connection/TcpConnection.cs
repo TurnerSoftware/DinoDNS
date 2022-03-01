@@ -10,7 +10,38 @@ public class TcpConnectionClient : IDnsConnectionClient
 {
 	public static readonly TcpConnectionClient Instance = new();
 
-	private readonly ConcurrentDictionary<IPEndPoint, ConcurrentQueue<Socket>> Sockets = new();
+	private readonly ConcurrentDictionary<IPEndPoint, Socket> Sockets = new();
+	private readonly object NewSocketLock = new();
+
+	private Socket GetSocket(IPEndPoint endPoint)
+	{
+		if (Sockets.TryGetValue(endPoint, out var socket))
+		{
+			if (socket.Connected)
+			{
+				return socket;
+			}
+
+			//TODO: Investigate whether we can just re-connect to existing sockets that are closed
+			SocketMessageOrderer.ClearSocket(socket);
+			OnSocketEnd(socket);
+			socket.Dispose();
+		}
+
+		//We can't rely on GetOrAdd-type methods on ConcurrentDictionary as the factory can be called multiple times.
+		//Instead, we rely on TryGetValue for the hot path (existing socket) otherwise use a typical lock.
+		lock (NewSocketLock)
+		{
+			if (!Sockets.TryGetValue(endPoint, out socket))
+			{
+				socket = CreateSocket(endPoint);
+
+				Sockets.TryAdd(endPoint, socket);
+			}
+
+			return socket;
+		}
+	}
 
 	protected virtual Socket CreateSocket(IPEndPoint endPoint) => new(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
 	{
@@ -26,51 +57,27 @@ public class TcpConnectionClient : IDnsConnectionClient
 
 	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
 	{
-		var socketQueue = Sockets.GetOrAdd(endPoint, static _ => new());
-
-		if (socketQueue.TryDequeue(out var socket))
-		{
-			if (!socket.Connected)
-			{
-				//TODO: Investigate whether we can just re-connect to existing sockets that are closed
-				SocketMessageOrderer.ClearSocket(socket);
-				OnSocketEnd(socket);
-				socket.Dispose();
-				socket = CreateSocket(endPoint);
-			}
-		}
-		else if (socket is null)
-		{
-			socket = CreateSocket(endPoint);
-		}
-
+		var socket = GetSocket(endPoint);
 		if (!socket.Connected)
 		{
 			await socket.ConnectAsync(endPoint, cancellationToken).ConfigureAwait(false);
 			await OnConnectAsync(socket, endPoint, cancellationToken).ConfigureAwait(false);
 		}
 
-		try
-		{
-			var messageLength = await PerformQueryAsync(socket, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
+		var messageLength = await PerformQueryAsync(socket, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
 
-			if (SocketMessageOrderer.CheckMessageId(sourceBuffer, destinationBuffer) == MessageIdResult.Mixed)
-			{
-				messageLength = SocketMessageOrderer.Exchange(
-					socket,
-					sourceBuffer,
-					destinationBuffer,
-					messageLength,
-					cancellationToken
-				);
-			}
-
-			return messageLength;
-		}
-		finally
+		if (SocketMessageOrderer.CheckMessageId(sourceBuffer, destinationBuffer) == MessageIdResult.Mixed)
 		{
-			socketQueue.Enqueue(socket);
+			messageLength = SocketMessageOrderer.Exchange(
+				socket,
+				sourceBuffer,
+				destinationBuffer,
+				messageLength,
+				cancellationToken
+			);
 		}
+
+		return messageLength;
 	}
 
 	protected virtual async ValueTask<int> PerformQueryAsync(Socket socket, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)

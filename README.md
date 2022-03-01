@@ -52,8 +52,8 @@ A good DNS client implementation will pool TCP sockets to avoid needing to negot
 
 |            Method |      Mean |    Error |   StdDev |     Op/s | Ratio | RatioSD |  Gen 0 | Allocated |
 |------------------ |----------:|---------:|---------:|---------:|------:|--------:|-------:|----------:|
-|           DinoDNS |  93.58 us | 1.793 us | 1.678 us | 10,685.9 |  1.00 |    0.00 | 0.4883 |   1,900 B |
-| MichaCo_DnsClient | 114.45 us | 2.215 us | 2.551 us |  8,737.3 |  1.23 |    0.03 | 1.4648 |   5,067 B |
+|           DinoDNS |  94.99 us | 1.018 us | 0.902 us | 10,527.1 |  1.00 |    0.00 | 0.4883 |   1,892 B |
+| MichaCo_DnsClient | 112.52 us | 2.246 us | 3.562 us |  8,887.1 |  1.21 |    0.05 | 1.4648 |   5,064 B |
 
 <small>
 ⚠ Note: While Kapetan's DNS client does support TCP, it can't be benchmarked due to port exhaustion issues it has.
