@@ -33,6 +33,7 @@ public class TcpConnectionClient : IDnsConnectionClient
 			if (!socket.Connected)
 			{
 				//TODO: Investigate whether we can just re-connect to existing sockets that are closed
+				SocketMessageOrderer.ClearSocket(socket);
 				OnSocketEnd(socket);
 				socket.Dispose();
 				socket = CreateSocket(endPoint);
@@ -51,7 +52,20 @@ public class TcpConnectionClient : IDnsConnectionClient
 
 		try
 		{
-			return await PerformQueryAsync(socket, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
+			var messageLength = await PerformQueryAsync(socket, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
+
+			if (SocketMessageOrderer.CheckMessageId(sourceBuffer, destinationBuffer) == MessageIdResult.Mixed)
+			{
+				messageLength = SocketMessageOrderer.Exchange(
+					socket,
+					sourceBuffer,
+					destinationBuffer,
+					messageLength,
+					cancellationToken
+				);
+			}
+
+			return messageLength;
 		}
 		finally
 		{

@@ -25,6 +25,18 @@ public sealed class UdpConnectionClient : IDnsConnectionClient
 		{
 			await socket.SendAsync(sourceBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
 			var messageLength = await socket.ReceiveAsync(destinationBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+
+			if (SocketMessageOrderer.CheckMessageId(sourceBuffer, destinationBuffer) == MessageIdResult.Mixed)
+			{
+				messageLength = SocketMessageOrderer.Exchange(
+					socket,
+					sourceBuffer,
+					destinationBuffer,
+					messageLength,
+					cancellationToken
+				);
+			}
+
 			return messageLength;
 		}
 		finally

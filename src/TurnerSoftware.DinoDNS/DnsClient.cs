@@ -1,5 +1,4 @@
-﻿using System.Buffers;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using TurnerSoftware.DinoDNS.Connection;
 using TurnerSoftware.DinoDNS.Protocol;
 
@@ -66,7 +65,7 @@ public sealed class DnsClient
 				var bytesReceived = await connection
 					.SendMessageAsync(nameServer.EndPoint, sourceBuffer, destinationBuffer, cancellationToken)
 					.ConfigureAwait(false);
-
+				
 				new DnsProtocolReader(destinationBuffer).ReadHeader(out var header);
 				switch (header.Flags.ResponseCode)
 				{
