@@ -14,23 +14,26 @@ public sealed class UdpConnectionClient : IDnsConnectionClient
 
 	private Socket GetSocket(IPEndPoint endPoint)
 	{
-		return Sockets.GetOrAdd(endPoint, static (endPoint, args) =>
+		if (Sockets.TryGetValue(endPoint, out var socket))
 		{
-			//Because sockets are disposable, we have to be careful about creating them in GetOrAdd.
-			//This could be called multiple times so we have to do some additional safety checks.
-			lock (args.NewSocketLock)
-			{
-				if (args.Sockets.TryGetValue(endPoint, out var socket))
-				{
-					return socket;
-				}
+			return socket;
+		}
 
+		//We can't rely on GetOrAdd-type methods on ConcurrentDictionary as the factory can be called multiple times.
+		//Instead, we rely on TryGetValue for the hot path (existing socket) otherwise use a typical lock.
+		lock (NewSocketLock)
+		{
+			if (!Sockets.TryGetValue(endPoint, out socket))
+			{
 				socket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 				//There is no IO involved in connecting to a connection-less protocol
 				socket.Connect(endPoint);
-				return socket;
+
+				Sockets.TryAdd(endPoint, socket);
 			}
-		}, (NewSocketLock, Sockets));
+
+			return socket;
+		}
 	}
 
 	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
