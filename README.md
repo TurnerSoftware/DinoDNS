@@ -37,11 +37,11 @@ The server implementation that each benchmark is performing against is Dino DNS.
 This is your typical DNS query.
 While fast and efficient, it is limited by the lack of transport-layer encryption, reliable delivery and message length.
 
-|            Method |      Mean |    Error |    StdDev |     Op/s | Ratio | RatioSD |   Gen 0 |  Gen 1 | Allocated |
-|------------------ |----------:|---------:|----------:|---------:|------:|--------:|--------:|-------:|----------:|
-|           DinoDNS |  95.48 us | 1.785 us |  1.669 us | 10,473.5 |  1.00 |    0.00 |  0.4883 |      - |   1,711 B |
-|       Kapetan_DNS | 306.17 us | 6.053 us | 15.839 us |  3,266.1 |  3.23 |    0.17 | 23.4375 | 0.4883 |  73,997 B |
-| MichaCo_DnsClient | 248.54 us | 3.819 us |  4.086 us |  4,023.4 |  2.61 |    0.07 | 22.4609 |      - |  71,640 B |
+|            Method |      Mean |    Error |    StdDev |     Op/s | Ratio | RatioSD |   Gen 0 | Allocated |
+|------------------ |----------:|---------:|----------:|---------:|------:|--------:|--------:|----------:|
+|           DinoDNS |  97.98 us | 1.319 us |  1.233 us | 10,205.7 |  1.00 |    0.00 |  0.4883 |   1,703 B |
+|       Kapetan_DNS | 328.67 us | 8.654 us | 25.517 us |  3,042.6 |  3.27 |    0.13 | 23.4375 |  73,994 B |
+| MichaCo_DnsClient | 278.44 us | 7.794 us | 22.981 us |  3,591.4 |  2.73 |    0.14 | 22.4609 |  71,640 B |
 
 ### DNS-over-TCP
 
