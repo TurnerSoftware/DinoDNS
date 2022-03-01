@@ -9,40 +9,49 @@ public sealed class UdpConnectionClient : IDnsConnectionClient
 {
 	public static readonly UdpConnectionClient Instance = new();
 
-	private readonly ConcurrentDictionary<IPEndPoint, ConcurrentQueue<Socket>> Sockets = new();
+	private readonly ConcurrentDictionary<IPEndPoint, Socket> Sockets = new();
+	private readonly object NewSocketLock = new();
+
+	private Socket GetSocket(IPEndPoint endPoint)
+	{
+		return Sockets.GetOrAdd(endPoint, static (endPoint, args) =>
+		{
+			//Because sockets are disposable, we have to be careful about creating them in GetOrAdd.
+			//This could be called multiple times so we have to do some additional safety checks.
+			lock (args.NewSocketLock)
+			{
+				if (args.Sockets.TryGetValue(endPoint, out var socket))
+				{
+					return socket;
+				}
+
+				socket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+				//There is no IO involved in connecting to a connection-less protocol
+				socket.Connect(endPoint);
+				return socket;
+			}
+		}, (NewSocketLock, Sockets));
+	}
 
 	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
 	{
-		var socketQueue = Sockets.GetOrAdd(endPoint, static _ => new());
-		if (!socketQueue.TryDequeue(out var socket))
+		var socket = GetSocket(endPoint);
+
+		await socket.SendAsync(sourceBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		var messageLength = await socket.ReceiveAsync(destinationBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+
+		if (SocketMessageOrderer.CheckMessageId(sourceBuffer, destinationBuffer) == MessageIdResult.Mixed)
 		{
-			socket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-			//There is no IO involved in connecting to a connection-less protocol
-			socket.Connect(endPoint);
+			messageLength = SocketMessageOrderer.Exchange(
+				socket,
+				sourceBuffer,
+				destinationBuffer,
+				messageLength,
+				cancellationToken
+			);
 		}
 
-		try
-		{
-			await socket.SendAsync(sourceBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
-			var messageLength = await socket.ReceiveAsync(destinationBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
-
-			if (SocketMessageOrderer.CheckMessageId(sourceBuffer, destinationBuffer) == MessageIdResult.Mixed)
-			{
-				messageLength = SocketMessageOrderer.Exchange(
-					socket,
-					sourceBuffer,
-					destinationBuffer,
-					messageLength,
-					cancellationToken
-				);
-			}
-
-			return messageLength;
-		}
-		finally
-		{
-			socketQueue.Enqueue(socket);
-		}
+		return messageLength;
 	}
 }
 
