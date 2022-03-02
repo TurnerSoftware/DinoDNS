@@ -11,31 +11,37 @@ public readonly struct DnsProtocolWriter
 {
 	public readonly SeekableMemory<byte> SeekableDestination;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolWriter(SeekableMemory<byte> destination)
 	{
 		SeekableDestination = destination;
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private DnsProtocolWriter Advance(int bytesWritten)
 	{
 		return new(SeekableDestination.SeekRelative(bytesWritten));
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolWriter AppendByte(byte value)
 	{
 		SeekableDestination.Span[0] = value;
 		return Advance(sizeof(byte));
 	}
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolWriter AppendUInt16(ushort value)
 	{
 		BinaryPrimitives.WriteUInt16BigEndian(SeekableDestination.Span, value);
 		return Advance(sizeof(ushort));
 	}
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolWriter AppendUInt32(uint value)
 	{
 		BinaryPrimitives.WriteUInt32BigEndian(SeekableDestination.Span, value);
 		return Advance(sizeof(uint));
 	}
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolWriter AppendBytes(ReadOnlySpan<byte> value)
 	{
 		value.CopyTo(SeekableDestination.Span);

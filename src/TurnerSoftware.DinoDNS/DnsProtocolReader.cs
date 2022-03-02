@@ -11,26 +11,31 @@ public readonly struct DnsProtocolReader
 {
 	public readonly SeekableReadOnlyMemory<byte> SeekableSource;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolReader(SeekableReadOnlyMemory<byte> seekableSource)
 	{
 		SeekableSource = seekableSource;
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private DnsProtocolReader Advance(int bytesRead)
 	{
 		return new(SeekableSource.SeekRelative(bytesRead));
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolReader ReadUInt16(out ushort value)
 	{
 		value = BinaryPrimitives.ReadUInt16BigEndian(SeekableSource.Span);
 		return Advance(sizeof(ushort));
 	}
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolReader ReadUInt32(out uint value)
 	{
 		value = BinaryPrimitives.ReadUInt32BigEndian(SeekableSource.Span);
 		return Advance(sizeof(uint));
 	}
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public DnsProtocolReader ReadNext(int bytes, out ReadOnlyMemory<byte> value)
 	{
 		value = SeekableSource.Memory[..bytes];
