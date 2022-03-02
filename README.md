@@ -28,7 +28,7 @@ These support plans help fund our OSS commitments to provide better software for
 ## 🥇 Performance
 
 These performance comparisons show the performance overhead of the DNS library itself and associated allocations.
-They do not represent the overhead over the network to a remote DNS servers.
+They do not represent the network overhead to a remote DNS servers.
 
 The server implementation that each benchmark is performing against is Dino DNS.
 
