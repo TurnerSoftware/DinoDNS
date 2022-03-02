@@ -29,7 +29,7 @@ public sealed class DnsClient
 	{
 		var transitData = TransitData.Rent(Options);
 		var responseBuffer = transitData.ResponseBuffer;
-		var writtenBytes = new DnsProtocolWriter(transitData.RequestBuffer).AppendMessage(message).GetWrittenBytes();
+		var writtenBytes = new DnsProtocolWriter(transitData.RequestBuffer).AppendMessage(in message).GetWrittenBytes();
 
 		try
 		{

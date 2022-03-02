@@ -78,7 +78,7 @@ public readonly struct DnsProtocolWriter
 		}
 	}
 
-	public DnsProtocolWriter AppendQuestion(Question question)
+	public DnsProtocolWriter AppendQuestion(in Question question)
 	{
 		return AppendLabelSequence(question.Query)
 			.AppendUInt16((ushort)question.Type)
@@ -92,7 +92,7 @@ public readonly struct DnsProtocolWriter
 		return AppendUInt16(offset);
 	}
 
-	public unsafe DnsProtocolWriter AppendLabel(LabelSequence.Label label)
+	public unsafe DnsProtocolWriter AppendLabel(in LabelSequence.Label label)
 	{
 		var bytesWritten = (byte)label.ToBytes(
 			SeekableDestination.Span[1..]
@@ -106,14 +106,14 @@ public readonly struct DnsProtocolWriter
 	/// </summary>
 	/// <param name="labelSequence"></param>
 	/// <returns></returns>
-	public DnsProtocolWriter AppendLabelSequence(LabelSequence labelSequence)
+	public DnsProtocolWriter AppendLabelSequence(in LabelSequence labelSequence)
 	{
 		var writer = this;
 		//We can't use the Label Sequence ByteValue directly because we don't know if it contains a pointer.
 		//This is a problem as the pointer may not be intended to match the written data.
 		foreach (var label in labelSequence)
 		{
-			writer = writer.AppendLabel(label);
+			writer = writer.AppendLabel(in label);
 		}
 		return writer.AppendLabelSequenceEnd();
 	}
@@ -125,7 +125,7 @@ public readonly struct DnsProtocolWriter
 	/// <returns></returns>
 	public DnsProtocolWriter AppendLabelSequenceEnd() => AppendByte(0);
 
-	public DnsProtocolWriter AppendResourceRecord(ResourceRecord resourceRecord)
+	public DnsProtocolWriter AppendResourceRecord(in ResourceRecord resourceRecord)
 	{
 		return AppendLabelSequence(resourceRecord.DomainName)
 			.AppendUInt16((ushort)resourceRecord.Type)
@@ -140,28 +140,28 @@ public readonly struct DnsProtocolWriter
 	/// </summary>
 	/// <param name="message"></param>
 	/// <returns></returns>
-	public DnsProtocolWriter AppendMessage(DnsMessage message)
+	public DnsProtocolWriter AppendMessage(in DnsMessage message)
 	{
 		var writer = AppendHeader(message.Header);
 
 		foreach (var question in message.Questions)
 		{
-			writer = writer.AppendQuestion(question);
+			writer = writer.AppendQuestion(in question);
 		}
 
 		foreach (var answer in message.Answers)
 		{
-			writer = writer.AppendResourceRecord(answer);
+			writer = writer.AppendResourceRecord(in answer);
 		}
 
 		foreach (var authority in message.Authorities)
 		{
-			writer = writer.AppendResourceRecord(authority);
+			writer = writer.AppendResourceRecord(in authority);
 		}
 
 		foreach (var additionalRecord in message.AdditionalRecords)
 		{
-			writer = writer.AppendResourceRecord(additionalRecord);
+			writer = writer.AppendResourceRecord(in additionalRecord);
 		}
 
 		return writer;

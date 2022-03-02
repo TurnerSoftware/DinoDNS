@@ -27,7 +27,7 @@ public readonly record struct DnsMessage(
 	};
 
 	public static DnsMessage CreateResponse(
-		DnsMessage request,
+		in DnsMessage request,
 		ResponseCode responseCode,
 		RecursionAvailable recursionAvailable = RecursionAvailable.No,
 		Truncation truncation = Truncation.No,

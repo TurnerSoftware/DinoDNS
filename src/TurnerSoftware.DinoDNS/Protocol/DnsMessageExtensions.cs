@@ -8,7 +8,7 @@ public static class DnsMessageExtensions
 		RecursionAvailable recursionAvailable = RecursionAvailable.No,
 		Truncation truncation = Truncation.No,
 		AuthoritativeAnswer authoritativeAnswer = AuthoritativeAnswer.No
-	) => DnsMessage.CreateResponse(message, responseCode, recursionAvailable, truncation, authoritativeAnswer);
+	) => DnsMessage.CreateResponse(in message, responseCode, recursionAvailable, truncation, authoritativeAnswer);
 
 	public static DnsMessage WithQuestions(this in DnsMessage message, Question[] questions)
 	{
