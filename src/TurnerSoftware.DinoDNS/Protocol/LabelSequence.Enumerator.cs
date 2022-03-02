@@ -11,16 +11,17 @@ public readonly partial struct LabelSequence
 	public struct Enumerator : IEnumerator<Label>
 	{
 		private readonly LabelSequence Value;
+		private Label CurrentLabel;
 		private int Index;
 
-		public Label Current { get; private set; }
-		readonly object IEnumerator.Current => Current;
+		public readonly Label Current => CurrentLabel;
+		readonly object IEnumerator.Current => CurrentLabel;
 
 		internal Enumerator(LabelSequence value)
 		{
 			Value = value;
 			Index = value.IsByteSequence ? value.ByteValue.Offset : 0;
-			Current = default;
+			CurrentLabel = default;
 		}
 
 		private bool NextCharLabel()
@@ -28,7 +29,7 @@ public readonly partial struct LabelSequence
 			var indexSlice = Value.CharValue[Index..];
 			if (indexSlice.IsEmpty)
 			{
-				Current = default;
+				CurrentLabel = default;
 				return false;
 			}
 
@@ -40,7 +41,7 @@ public readonly partial struct LabelSequence
 			}
 
 			var value = indexSlice[..nextIndex];
-			Current = new Label(value);
+			CurrentLabel = new Label(value);
 			Index += (foundSeparator ? nextIndex + 1 : nextIndex);
 			return true;
 		}
@@ -65,12 +66,12 @@ public readonly partial struct LabelSequence
 			if (countOrPointer > 0 && countOrPointer <= Label.MaxLength)
 			{
 				seekableMemory = seekableMemory.SeekRelative(1).ReadNext(countOrPointer, out var value);
-				Current = new Label(value, fromPointer);
+				CurrentLabel = new Label(value, fromPointer);
 				Index = seekableMemory.Offset;
 				return true;
 			}
 
-			Current = default;
+			CurrentLabel = default;
 			return false;
 		}
 
@@ -86,11 +87,9 @@ public readonly partial struct LabelSequence
 		public void Reset()
 		{
 			Index = 0;
-			Current = default;
+			CurrentLabel = default;
 		}
 
-		public readonly void Dispose()
-		{
-		}
+		public readonly void Dispose() { }
 	}
 }

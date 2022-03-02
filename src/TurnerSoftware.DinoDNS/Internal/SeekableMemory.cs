@@ -1,4 +1,6 @@
-﻿namespace TurnerSoftware.DinoDNS.Internal;
+﻿using System.Runtime.CompilerServices;
+
+namespace TurnerSoftware.DinoDNS.Internal;
 
 /// <summary>
 /// </summary>
@@ -8,13 +10,13 @@ public readonly struct SeekableMemory<T>
 	public readonly Memory<T> Source;
 	public readonly int Offset;
 
-	public SeekableMemory(Memory<T> source)
+	public SeekableMemory(in Memory<T> source)
 	{
 		Source = source;
 		Offset = 0;
 	}
 
-	public SeekableMemory(Memory<T> source, int offset)
+	public SeekableMemory(in Memory<T> source, int offset)
 	{
 		Source = source;
 		Offset = offset;
@@ -25,11 +27,13 @@ public readonly struct SeekableMemory<T>
 
 	public Span<T> Span => Source.Span[Offset..];
 	public Memory<T> Memory => Source[Offset..];
-	public T this[Index index] => Span[index];
+	public ref T this[Index index] => ref Span[index];
 	public Memory<T> this[Range range] => Memory[range];
-	public T Current => this[0];
+	public ref T Current => ref this[0];
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableMemory<T> Seek(int offset) => new(Source, offset);
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableMemory<T> SeekRelative(int offsetAdjustment) => new(Source, Offset + offsetAdjustment);
 
 	public SeekableMemory<T> Read(out T value)
@@ -44,7 +48,7 @@ public readonly struct SeekableMemory<T>
 		return SeekRelative(count);
 	}
 
-	public static implicit operator SeekableMemory<T>(Memory<T> source) => new(source);
+	public static implicit operator SeekableMemory<T>(in Memory<T> source) => new(in source);
 }
 
 public readonly struct SeekableReadOnlyMemory<T>
@@ -52,13 +56,13 @@ public readonly struct SeekableReadOnlyMemory<T>
 	public readonly ReadOnlyMemory<T> Source;
 	public readonly int Offset;
 
-	public SeekableReadOnlyMemory(ReadOnlyMemory<T> source)
+	public SeekableReadOnlyMemory(in ReadOnlyMemory<T> source)
 	{
 		Source = source;
 		Offset = 0;
 	}
 
-	public SeekableReadOnlyMemory(ReadOnlyMemory<T> source, int offset)
+	public SeekableReadOnlyMemory(in ReadOnlyMemory<T> source, int offset)
 	{
 		Source = source;
 		Offset = offset;
@@ -69,12 +73,14 @@ public readonly struct SeekableReadOnlyMemory<T>
 
 	public ReadOnlySpan<T> Span => Source.Span[Offset..];
 	public ReadOnlyMemory<T> Memory => Source[Offset..];
-	public T this[Index index] => Span[index];
+	public ref readonly T this[Index index] => ref Span[index];
 	public SeekableReadOnlyMemory<T> this[Range range] => Memory[range];
-	public T Current => this[0];
+	public ref readonly T Current => ref this[0];
 
-	public SeekableReadOnlyMemory<T> Seek(int offset) => new(Source, offset);
-	public SeekableReadOnlyMemory<T> SeekRelative(int offsetAdjustment) => new(Source, Offset + offsetAdjustment);
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public readonly SeekableReadOnlyMemory<T> Seek(int offset) => new(in Source, offset);
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public readonly SeekableReadOnlyMemory<T> SeekRelative(int offsetAdjustment) => new(in Source, Offset + offsetAdjustment);
 
 	public SeekableReadOnlyMemory<T> Read(out T value)
 	{
@@ -89,7 +95,7 @@ public readonly struct SeekableReadOnlyMemory<T>
 	}
 
 	public static implicit operator SeekableReadOnlyMemory<T>(Memory<T> source) => new(source);
-	public static implicit operator SeekableReadOnlyMemory<T>(ReadOnlyMemory<T> source) => new(source);
-	public static implicit operator ReadOnlySpan<T>(SeekableReadOnlyMemory<T> source) => source.Span;
-	public static implicit operator ReadOnlyMemory<T>(SeekableReadOnlyMemory<T> source) => source.Memory;
+	public static implicit operator SeekableReadOnlyMemory<T>(in ReadOnlyMemory<T> source) => new(in source);
+	public static implicit operator ReadOnlySpan<T>(in SeekableReadOnlyMemory<T> source) => source.Span;
+	public static implicit operator ReadOnlyMemory<T>(in SeekableReadOnlyMemory<T> source) => source.Memory;
 }
