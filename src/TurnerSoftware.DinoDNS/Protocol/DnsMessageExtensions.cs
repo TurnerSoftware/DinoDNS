@@ -2,6 +2,14 @@
 
 public static class DnsMessageExtensions
 {
+	public static DnsMessage ToResponse(
+		this in DnsMessage message, 
+		ResponseCode responseCode,
+		RecursionAvailable recursionAvailable = RecursionAvailable.No,
+		Truncation truncation = Truncation.No,
+		AuthoritativeAnswer authoritativeAnswer = AuthoritativeAnswer.No
+	) => DnsMessage.CreateResponse(message, responseCode, recursionAvailable, truncation, authoritativeAnswer);
+
 	public static DnsMessage WithQuestions(this in DnsMessage message, Question[] questions)
 	{
 		return message with
