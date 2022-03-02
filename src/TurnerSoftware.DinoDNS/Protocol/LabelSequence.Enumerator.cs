@@ -65,8 +65,8 @@ public readonly partial struct LabelSequence
 
 			if (countOrPointer > 0 && countOrPointer <= Label.MaxLength)
 			{
-				seekableMemory = seekableMemory.SeekRelative(1).ReadNext(countOrPointer, out var value);
-				CurrentLabel = new Label(value, fromPointer);
+				seekableMemory = seekableMemory.ReadNext(countOrPointer + 1, out var value);
+				CurrentLabel = new Label(value[1..], fromPointer);
 				Index = seekableMemory.Offset;
 				return true;
 			}

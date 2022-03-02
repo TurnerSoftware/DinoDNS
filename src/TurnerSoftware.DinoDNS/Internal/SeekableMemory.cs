@@ -10,12 +10,14 @@ public readonly struct SeekableMemory<T>
 	public readonly Memory<T> Source;
 	public readonly int Offset;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableMemory(in Memory<T> source)
 	{
 		Source = source;
 		Offset = 0;
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableMemory(in Memory<T> source, int offset)
 	{
 		Source = source;
@@ -36,12 +38,14 @@ public readonly struct SeekableMemory<T>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableMemory<T> SeekRelative(int offsetAdjustment) => new(Source, Offset + offsetAdjustment);
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableMemory<T> Read(out T value)
 	{
 		value = Current;
 		return SeekRelative(1);
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableMemory<T> ReadNext(int count, out Memory<T> value)
 	{
 		value = this[..count];
@@ -56,12 +60,14 @@ public readonly struct SeekableReadOnlyMemory<T>
 	public readonly ReadOnlyMemory<T> Source;
 	public readonly int Offset;
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableReadOnlyMemory(in ReadOnlyMemory<T> source)
 	{
 		Source = source;
 		Offset = 0;
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableReadOnlyMemory(in ReadOnlyMemory<T> source, int offset)
 	{
 		Source = source;
@@ -74,7 +80,7 @@ public readonly struct SeekableReadOnlyMemory<T>
 	public ReadOnlySpan<T> Span => Source.Span[Offset..];
 	public ReadOnlyMemory<T> Memory => Source[Offset..];
 	public ref readonly T this[Index index] => ref Span[index];
-	public SeekableReadOnlyMemory<T> this[Range range] => Memory[range];
+	public ReadOnlyMemory<T> this[Range range] => Memory[range];
 	public ref readonly T Current => ref this[0];
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -82,12 +88,14 @@ public readonly struct SeekableReadOnlyMemory<T>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public readonly SeekableReadOnlyMemory<T> SeekRelative(int offsetAdjustment) => new(in Source, Offset + offsetAdjustment);
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableReadOnlyMemory<T> Read(out T value)
 	{
 		value = Current;
 		return SeekRelative(1);
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public SeekableReadOnlyMemory<T> ReadNext(int count, out ReadOnlyMemory<T> value)
 	{
 		value = this[..count];
