@@ -28,7 +28,7 @@ These support plans help fund our OSS commitments to provide better software for
 ## 🥇 Performance
 
 These performance comparisons show the performance overhead of the DNS library itself and associated allocations.
-They do not represent the overhead to remote DNS servers.
+They do not represent the overhead over the network to a remote DNS servers.
 
 The server implementation that each benchmark is performing against is Dino DNS.
 
@@ -37,11 +37,11 @@ The server implementation that each benchmark is performing against is Dino DNS.
 This is your typical DNS query.
 While fast and efficient, it is limited by the lack of transport-layer encryption, reliable delivery and message length.
 
-|            Method |      Mean |    Error |    StdDev |     Op/s | Ratio | RatioSD |   Gen 0 | Allocated |
-|------------------ |----------:|---------:|----------:|---------:|------:|--------:|--------:|----------:|
-|           DinoDNS |  97.98 us | 1.319 us |  1.233 us | 10,205.7 |  1.00 |    0.00 |  0.4883 |   1,703 B |
-|       Kapetan_DNS | 328.67 us | 8.654 us | 25.517 us |  3,042.6 |  3.27 |    0.13 | 23.4375 |  73,994 B |
-| MichaCo_DnsClient | 278.44 us | 7.794 us | 22.981 us |  3,591.4 |  2.73 |    0.14 | 22.4609 |  71,640 B |
+|            Method |      Mean |     Error |    StdDev |     Op/s | Ratio | RatioSD |   Gen 0 |  Gen 1 | Allocated |
+|------------------ |----------:|----------:|----------:|---------:|------:|--------:|--------:|-------:|----------:|
+|           DinoDNS |  90.28 us |  1.066 us |  0.945 us | 11,077.1 |  1.00 |    0.00 |  0.4883 |      - |   1,704 B |
+|       Kapetan_DNS | 325.99 us | 10.447 us | 30.803 us |  3,067.6 |  3.58 |    0.19 | 23.4375 | 0.9766 |  73,996 B |
+| MichaCo_DnsClient | 257.72 us |  5.141 us | 10.384 us |  3,880.1 |  2.84 |    0.11 | 22.4609 |      - |  71,640 B |
 
 ### DNS-over-TCP
 
