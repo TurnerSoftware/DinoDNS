@@ -53,17 +53,17 @@ public sealed class HttpsConnectionClient : IDnsConnectionClient
 		return httpClient;
 	}
 
-	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken)
 	{
 		var httpClient = HttpClients.GetOrAdd(endPoint, CreateHttpClient);
-		var content = new ReadOnlyMemoryContent(sourceBuffer);
+		var content = new ReadOnlyMemoryContent(requestBuffer);
 		content.Headers.ContentType = ContentType;
 		using var response = await httpClient.PostAsync((Uri?)null, content, cancellationToken).ConfigureAwait(false);
 
 		//TODO: Handle response statuses
 		var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 		//This is assuming that the stream is a MemoryStream
-		return await responseStream.ReadAsync(destinationBuffer, cancellationToken).ConfigureAwait(false);
+		return await responseStream.ReadAsync(responseBuffer, cancellationToken).ConfigureAwait(false);
 	}
 }
 

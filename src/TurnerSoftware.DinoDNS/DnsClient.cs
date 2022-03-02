@@ -55,7 +55,7 @@ public sealed class DnsClient
 		}
 	}
 
-	public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken = default)
+	public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken = default)
 	{
 		foreach (var nameServer in NameServers)
 		{
@@ -63,10 +63,10 @@ public sealed class DnsClient
 			{
 				var connection = nameServer.Connection;
 				var bytesReceived = await connection
-					.SendMessageAsync(nameServer.EndPoint, sourceBuffer, destinationBuffer, cancellationToken)
+					.SendMessageAsync(nameServer.EndPoint, requestBuffer, responseBuffer, cancellationToken)
 					.ConfigureAwait(false);
 				
-				new DnsProtocolReader(destinationBuffer).ReadHeader(out var header);
+				new DnsProtocolReader(responseBuffer).ReadHeader(out var header);
 				switch (header.Flags.ResponseCode)
 				{
 					case ResponseCode.SERVFAIL:

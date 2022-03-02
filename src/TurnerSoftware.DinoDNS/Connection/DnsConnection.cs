@@ -4,7 +4,7 @@ namespace TurnerSoftware.DinoDNS.Connection;
 
 public interface IDnsConnectionClient
 {
-	ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken);
+	ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken);
 }
 
 public delegate ValueTask<int> OnDnsQueryCallback(ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken);

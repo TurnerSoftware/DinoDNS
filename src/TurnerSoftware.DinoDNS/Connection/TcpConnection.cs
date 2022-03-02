@@ -55,7 +55,7 @@ public class TcpConnectionClient : IDnsConnectionClient
 
 	protected virtual void OnSocketEnd(Socket socket) { }
 
-	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken)
 	{
 		var socket = GetSocket(endPoint);
 		if (!socket.Connected)
@@ -64,14 +64,14 @@ public class TcpConnectionClient : IDnsConnectionClient
 			await OnConnectAsync(socket, endPoint, cancellationToken).ConfigureAwait(false);
 		}
 
-		var messageLength = await PerformQueryAsync(socket, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
+		var messageLength = await PerformQueryAsync(socket, requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
 
-		if (SocketMessageOrderer.CheckMessageId(sourceBuffer, destinationBuffer) == MessageIdResult.Mixed)
+		if (SocketMessageOrderer.CheckMessageId(requestBuffer, responseBuffer) == MessageIdResult.Mixed)
 		{
 			messageLength = SocketMessageOrderer.Exchange(
 				socket,
-				sourceBuffer,
-				destinationBuffer,
+				requestBuffer,
+				responseBuffer,
 				messageLength,
 				cancellationToken
 			);
@@ -80,20 +80,20 @@ public class TcpConnectionClient : IDnsConnectionClient
 		return messageLength;
 	}
 
-	protected virtual async ValueTask<int> PerformQueryAsync(Socket socket, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	protected virtual async ValueTask<int> PerformQueryAsync(Socket socket, ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken)
 	{
 		//TCP connections require sending a 2-byte length value before the message.
 		//Use our destination buffer as a temporary buffer to get and send the length.
-		BinaryPrimitives.WriteUInt16BigEndian(destinationBuffer.Span, (ushort)sourceBuffer.Length);
-		await socket.SendAsync(destinationBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		BinaryPrimitives.WriteUInt16BigEndian(responseBuffer.Span, (ushort)requestBuffer.Length);
+		await socket.SendAsync(responseBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
 		//Send our main message from our source buffer	
-		await socket.SendAsync(sourceBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		await socket.SendAsync(requestBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
 
 		//Read the corresponding 2-byte length in the response to know how long the message is
-		await socket.ReceiveAsync(destinationBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
-		var messageLength = BinaryPrimitives.ReadUInt16BigEndian(destinationBuffer.Span);
+		await socket.ReceiveAsync(responseBuffer[..2], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		var messageLength = BinaryPrimitives.ReadUInt16BigEndian(responseBuffer.Span);
 		//Read the response based on the determined message length
-		await socket.ReceiveAsync(destinationBuffer[..messageLength], SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		await socket.ReceiveAsync(responseBuffer[..messageLength], SocketFlags.None, cancellationToken).ConfigureAwait(false);
 		return messageLength;
 	}
 }

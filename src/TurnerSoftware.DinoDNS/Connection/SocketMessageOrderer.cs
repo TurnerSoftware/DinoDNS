@@ -13,15 +13,15 @@ internal sealed class SocketMessageOrderer
 	private readonly record struct Message(byte[] Data, int MessageLength);
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static MessageIdResult CheckMessageId(ReadOnlyMemory<byte> sourceBuffer, ReadOnlyMemory<byte> destinationBuffer)
+	public static MessageIdResult CheckMessageId(ReadOnlyMemory<byte> requestBuffer, ReadOnlyMemory<byte> responseBuffer)
 	{
 		const int idSize = sizeof(ushort);
-		if (destinationBuffer.Length < idSize)
+		if (responseBuffer.Length < idSize)
 		{
 			return MessageIdResult.Invalid;
 		}
 
-		var messagesMatch = sourceBuffer[..idSize].Span.SequenceEqual(destinationBuffer[..idSize].Span);
+		var messagesMatch = requestBuffer[..idSize].Span.SequenceEqual(responseBuffer[..idSize].Span);
 		return messagesMatch switch
 		{
 			true => MessageIdResult.Matched,
@@ -44,19 +44,19 @@ internal sealed class SocketMessageOrderer
 
 	public static int Exchange(
 		Socket socket,
-		ReadOnlyMemory<byte> sourceBuffer,
-		Memory<byte> destinationBuffer,
+		ReadOnlyMemory<byte> requestBuffer,
+		Memory<byte> responseBuffer,
 		int messageLength,
 		CancellationToken cancellationToken
 	)
 	{
-		var requestedIdentifier = BinaryPrimitives.ReadUInt16BigEndian(sourceBuffer.Span);
-		var receivedIdentifier = BinaryPrimitives.ReadUInt16BigEndian(destinationBuffer.Span);
+		var requestedIdentifier = BinaryPrimitives.ReadUInt16BigEndian(requestBuffer.Span);
+		var receivedIdentifier = BinaryPrimitives.ReadUInt16BigEndian(responseBuffer.Span);
 		var messageLookup = SocketMessages.GetOrAdd(socket.Handle, static _ => new());
 
 		//Use an intermediary rented buffer to avoid use-after-free issues
 		var rentedBytes = ArrayPool<byte>.Shared.Rent(messageLength);
-		destinationBuffer[..messageLength].CopyTo(rentedBytes.AsMemory());
+		responseBuffer[..messageLength].CopyTo(rentedBytes.AsMemory());
 		messageLookup.TryAdd(receivedIdentifier, new Message(rentedBytes, messageLength));
 
 		var spinWait = new SpinWait();
@@ -65,8 +65,8 @@ internal sealed class SocketMessageOrderer
 			if (messageLookup.TryRemove(requestedIdentifier, out var requestedMessage))
 			{
 				rentedBytes = requestedMessage.Data;
-				destinationBuffer.Span.Clear();
-				rentedBytes.AsMemory(0, requestedMessage.MessageLength).CopyTo(destinationBuffer);
+				responseBuffer.Span.Clear();
+				rentedBytes.AsMemory(0, requestedMessage.MessageLength).CopyTo(responseBuffer);
 				ArrayPool<byte>.Shared.Return(rentedBytes);
 				return messageLength;
 			}

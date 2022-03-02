@@ -45,22 +45,22 @@ public sealed class TlsConnectionClient : TcpConnectionClient
 
 	protected override void OnSocketEnd(Socket socket) => StreamLookup.TryRemove(socket.Handle, out _);
 
-	protected override async ValueTask<int> PerformQueryAsync(Socket socket, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	protected override async ValueTask<int> PerformQueryAsync(Socket socket, ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken)
 	{
 		var stream = StreamLookup.GetValueOrDefault(socket.Handle)!;
 
 		//TCP connections require sending a 2-byte length value before the message.
 		//Use our destination buffer as a temporary buffer to get and send the length.
-		BinaryPrimitives.WriteUInt16BigEndian(destinationBuffer.Span, (ushort)sourceBuffer.Length);
-		await stream.WriteAsync(destinationBuffer[..2], cancellationToken).ConfigureAwait(false);
+		BinaryPrimitives.WriteUInt16BigEndian(responseBuffer.Span, (ushort)requestBuffer.Length);
+		await stream.WriteAsync(responseBuffer[..2], cancellationToken).ConfigureAwait(false);
 		//Send our main message from our source buffer	
-		await stream.WriteAsync(sourceBuffer, cancellationToken).ConfigureAwait(false);
+		await stream.WriteAsync(requestBuffer, cancellationToken).ConfigureAwait(false);
 
 		//Read the corresponding 2-byte length in the response to know how long the message is
-		await stream.ReadAsync(destinationBuffer[..2], cancellationToken).ConfigureAwait(false);
-		var messageLength = BinaryPrimitives.ReadUInt16BigEndian(destinationBuffer.Span);
+		await stream.ReadAsync(responseBuffer[..2], cancellationToken).ConfigureAwait(false);
+		var messageLength = BinaryPrimitives.ReadUInt16BigEndian(responseBuffer.Span);
 		//Read the response based on the determined message length
-		await stream.ReadAsync(destinationBuffer[..messageLength], cancellationToken).ConfigureAwait(false);
+		await stream.ReadAsync(responseBuffer[..messageLength], cancellationToken).ConfigureAwait(false);
 
 		return messageLength;
 	}

@@ -36,19 +36,19 @@ public sealed class UdpConnectionClient : IDnsConnectionClient
 		}
 	}
 
-	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken)
 	{
 		var socket = GetSocket(endPoint);
 
-		await socket.SendAsync(sourceBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
-		var messageLength = await socket.ReceiveAsync(destinationBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		await socket.SendAsync(requestBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+		var messageLength = await socket.ReceiveAsync(responseBuffer, SocketFlags.None, cancellationToken).ConfigureAwait(false);
 
-		if (SocketMessageOrderer.CheckMessageId(sourceBuffer, destinationBuffer) == MessageIdResult.Mixed)
+		if (SocketMessageOrderer.CheckMessageId(requestBuffer, responseBuffer) == MessageIdResult.Mixed)
 		{
 			messageLength = SocketMessageOrderer.Exchange(
 				socket,
-				sourceBuffer,
-				destinationBuffer,
+				requestBuffer,
+				responseBuffer,
 				messageLength,
 				cancellationToken
 			);

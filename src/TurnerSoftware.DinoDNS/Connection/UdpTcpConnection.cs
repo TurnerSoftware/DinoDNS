@@ -7,14 +7,14 @@ public sealed class UdpTcpConnectionClient : IDnsConnectionClient
 {
 	public static readonly UdpTcpConnectionClient Instance = new();
 
-	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> sourceBuffer, Memory<byte> destinationBuffer, CancellationToken cancellationToken)
+	public async ValueTask<int> SendMessageAsync(IPEndPoint endPoint, ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken)
 	{
-		var messageLength = await UdpConnectionClient.Instance.SendMessageAsync(endPoint, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false);
+		var messageLength = await UdpConnectionClient.Instance.SendMessageAsync(endPoint, requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
 
-		new DnsProtocolReader(destinationBuffer).ReadHeader(out var header);
+		new DnsProtocolReader(responseBuffer).ReadHeader(out var header);
 		if (header.Flags.Truncation == Truncation.Yes)
 		{
-			messageLength = await TcpConnectionClient.Instance.SendMessageAsync(endPoint, sourceBuffer, destinationBuffer, cancellationToken).ConfigureAwait(false); 
+			messageLength = await TcpConnectionClient.Instance.SendMessageAsync(endPoint, requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false); 
 		}
 
 		return messageLength;
