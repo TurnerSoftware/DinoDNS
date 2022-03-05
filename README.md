@@ -90,7 +90,7 @@ This is a basic query against a DNS server, retrieving "A" records to further pr
 var client = new DnsClient(new NameServer[]
 {
 	new NameServer(IPAddress.Parse("192.168.0.1"), ConnectionType.Udp)
-    NameServers.Cloudflare.IPv4.GetPrimary(ConnectionType.DoH),
+	NameServers.Cloudflare.IPv4.GetPrimary(ConnectionType.DoH),
 }, DnsMessageOptions.Default);
 
 var dnsMessage = await client.QueryAsync("example.org", DnsQueryType.A);
