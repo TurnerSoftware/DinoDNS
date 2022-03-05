@@ -80,14 +80,51 @@ This can disguise DNS traffic when performed over port 443 (the default port for
 
 👋 Know of a .NET DNS-over-HTTPS client? Raise a PR to add it as a comparison!
 
-## ⭐ Example Usage
+## ⭐ Getting Started
+
+### Perform a DNS query
+
+This is a basic query against a DNS server, retrieving "A" records to further process.
 
 ```csharp
 var client = new DnsClient(new NameServer[]
 {
-    NameServers.Cloudflare.IPv4.GetPrimary(ConnectionType.Udp)
+	new NameServer(IPAddress.Parse("192.168.0.1"), ConnectionType.Udp)
+    NameServers.Cloudflare.IPv4.GetPrimary(ConnectionType.DoH),
 }, DnsMessageOptions.Default);
 
 var dnsMessage = await client.QueryAsync("example.org", DnsQueryType.A);
 var aRecords = dnsMessage.Answers.WithARecords();
+```
+
+### Implement a basic DNS server
+
+This is a basic forwarding DNS server where you can, for example, have use a UDP server endpoint but forward over TLS to another name server.
+
+```csharp
+public class DnsForwardingServer : DnsServerBase
+{
+	private readonly DnsClient Client;
+
+	public DnsForwardingServer(
+		NameServer[] nameServers,
+		ServerEndPoint[] endPoints,
+		DnsMessageOptions options
+	) : base(endPoints, options)
+	{
+		Client = new DnsClient(nameServers, options);
+	}
+
+	protected override async ValueTask<int> OnReceiveAsync(ReadOnlyMemory<byte> requestBuffer, Memory<byte> responseBuffer, CancellationToken cancellationToken)
+	{
+		return await Client.SendAsync(requestBuffer, responseBuffer, cancellationToken).ConfigureAwait(false);
+	}
+}
+
+var server = new DnsForwardingServer(
+	new[] { NameServers.Cloudflare.IPv4.GetPrimary(ConnectionType.DoT) },
+	new[] { new ServerEndpoint(ConnectionType.Udp) },
+	DnsMessageOptions.Default
+);
+server.Start();
 ```
