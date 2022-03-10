@@ -1,13 +1,13 @@
 ﻿namespace TurnerSoftware.DinoDNS;
 
-public ref struct DnsHostsReader
+public ref struct DnsHostsTokenReader
 {
 	private const char EndOfFile = char.MinValue;
 
 	private readonly ReadOnlySpan<char> Value;
 	private int Index;
 
-	public DnsHostsReader(ReadOnlySpan<char> value)
+	public DnsHostsTokenReader(ReadOnlySpan<char> value)
 	{
 		Value = value;
 		Index = 0;
@@ -50,7 +50,7 @@ public ref struct DnsHostsReader
 			'#' => ReadComment(),
 			' ' or '\t' => ReadWhitespace(),
 			'\r' or '\n' => ReadNewLine(),
-			_ => ReadHostOrAddress(),
+			_ => ReadIdentifier(),
 		};
 		return true;
 	}
@@ -107,7 +107,7 @@ public ref struct DnsHostsReader
 		return CreateToken(HostsTokenType.NewLine, startIndex);
 	}
 
-	private DnsHostsToken ReadHostOrAddress()
+	private DnsHostsToken ReadIdentifier()
 	{
 		var startIndex = Index;
 		while (true)
@@ -121,7 +121,7 @@ public ref struct DnsHostsReader
 				case ' ':
 				case '\t':
 				case '#':
-					return CreateToken(HostsTokenType.HostOrAddress, startIndex);
+					return CreateToken(HostsTokenType.Identifier, startIndex);
 			}
 		}
 	}
@@ -142,7 +142,7 @@ public readonly ref struct DnsHostsToken
 public enum HostsTokenType
 {
 	NewLine,
-	HostOrAddress,
+	Identifier,
 	Whitespace,
 	Comment
 }

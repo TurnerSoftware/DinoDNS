@@ -4,9 +4,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace TurnerSoftware.DinoDNS.Tests;
 
 [TestClass]
-public class DnsHostsReaderTests
+public class DnsHostsTokenReaderTests
 {
-	private static void CheckToken(ref DnsHostsReader reader, string expected, HostsTokenType tokenType)
+	private static void CheckToken(ref DnsHostsTokenReader reader, string expected, HostsTokenType tokenType)
 	{
 		Assert.IsTrue(reader.NextToken(out var token), "No token");
 		Assert.AreEqual(tokenType, token.TokenType, $"Token-mismatch for {expected}");
@@ -20,11 +20,11 @@ public class DnsHostsReaderTests
 	[DataRow("\r\n", HostsTokenType.NewLine, DisplayName = "Carriage Return + New Line")]
 	[DataRow(" ", HostsTokenType.Whitespace, DisplayName = "Space")]
 	[DataRow("\t", HostsTokenType.Whitespace, DisplayName = "Tab")]
-	[DataRow("127.0.0.1", HostsTokenType.HostOrAddress, DisplayName = "Address")]
-	[DataRow("example.org", HostsTokenType.HostOrAddress, DisplayName = "Host")]
+	[DataRow("127.0.0.1", HostsTokenType.Identifier, DisplayName = "Identifier (Address)")]
+	[DataRow("example.org", HostsTokenType.Identifier, DisplayName = "Identifier (Host)")]
 	public void ReadSingleToken(string hostsFile, HostsTokenType tokenType)
 	{
-		var reader = new DnsHostsReader(hostsFile);
+		var reader = new DnsHostsTokenReader(hostsFile);
 		CheckToken(ref reader, hostsFile, tokenType);
 	}
 
@@ -37,23 +37,23 @@ public class DnsHostsReaderTests
 
 1.1.1.1 cloudflare # This is cloudflare";
 
-		var reader = new DnsHostsReader(hostsFile);
+		var reader = new DnsHostsTokenReader(hostsFile);
 		CheckToken(ref reader, "# This is an example hosts file", HostsTokenType.Comment);
 		CheckToken(ref reader, "\r\n", HostsTokenType.NewLine);
-		CheckToken(ref reader, "127.0.0.1", HostsTokenType.HostOrAddress);
+		CheckToken(ref reader, "127.0.0.1", HostsTokenType.Identifier);
 		CheckToken(ref reader, " ", HostsTokenType.Whitespace);
-		CheckToken(ref reader, "localhost", HostsTokenType.HostOrAddress);
+		CheckToken(ref reader, "localhost", HostsTokenType.Identifier);
 		CheckToken(ref reader, "\r\n", HostsTokenType.NewLine);
-		CheckToken(ref reader, "192.168.0.1", HostsTokenType.HostOrAddress);
+		CheckToken(ref reader, "192.168.0.1", HostsTokenType.Identifier);
 		CheckToken(ref reader, "\t", HostsTokenType.Whitespace);
-		CheckToken(ref reader, "gateway", HostsTokenType.HostOrAddress);
+		CheckToken(ref reader, "gateway", HostsTokenType.Identifier);
 		CheckToken(ref reader, " ", HostsTokenType.Whitespace);
-		CheckToken(ref reader, "router", HostsTokenType.HostOrAddress);
+		CheckToken(ref reader, "router", HostsTokenType.Identifier);
 		CheckToken(ref reader, "\r\n", HostsTokenType.NewLine);
 		CheckToken(ref reader, "\r\n", HostsTokenType.NewLine);
-		CheckToken(ref reader, "1.1.1.1", HostsTokenType.HostOrAddress);
+		CheckToken(ref reader, "1.1.1.1", HostsTokenType.Identifier);
 		CheckToken(ref reader, " ", HostsTokenType.Whitespace);
-		CheckToken(ref reader, "cloudflare", HostsTokenType.HostOrAddress);
+		CheckToken(ref reader, "cloudflare", HostsTokenType.Identifier);
 		CheckToken(ref reader, " ", HostsTokenType.Whitespace);
 		CheckToken(ref reader, "# This is cloudflare", HostsTokenType.Comment);
 		Assert.IsFalse(reader.NextToken(out var token), $"Found token {token.Value}");
