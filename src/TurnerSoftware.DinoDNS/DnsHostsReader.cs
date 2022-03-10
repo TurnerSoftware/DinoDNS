@@ -57,7 +57,6 @@ public ref struct DnsHostsReader
 
 	private DnsHostsToken CreateToken(HostsTokenType tokenType, int startIndex)
 	{
-		//StartIndex and Index are both 0
 		var value = Value[startIndex..Index];
 		var token = new DnsHostsToken(tokenType, value);
 		return token;
@@ -74,10 +73,6 @@ public ref struct DnsHostsReader
 				case EndOfFile:
 				case '\r':
 				case '\n':
-					if (Current == '\r' && Peek() == '\n')
-					{
-						ReadNext();
-					}
 					return CreateToken(HostsTokenType.Comment, startIndex);
 			}
 		}
