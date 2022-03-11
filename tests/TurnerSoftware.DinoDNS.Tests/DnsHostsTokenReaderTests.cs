@@ -39,18 +39,18 @@ public class DnsHostsTokenReaderTests
 
 		var reader = new DnsHostsTokenReader(hostsFile);
 		CheckToken(ref reader, "# This is an example hosts file", HostsTokenType.Comment);
-		CheckToken(ref reader, "\r\n", HostsTokenType.NewLine);
+		CheckToken(ref reader, Environment.NewLine, HostsTokenType.NewLine);
 		CheckToken(ref reader, "127.0.0.1", HostsTokenType.Identifier);
 		CheckToken(ref reader, " ", HostsTokenType.Whitespace);
 		CheckToken(ref reader, "localhost", HostsTokenType.Identifier);
-		CheckToken(ref reader, "\r\n", HostsTokenType.NewLine);
+		CheckToken(ref reader, Environment.NewLine, HostsTokenType.NewLine);
 		CheckToken(ref reader, "192.168.0.1", HostsTokenType.Identifier);
 		CheckToken(ref reader, "\t", HostsTokenType.Whitespace);
 		CheckToken(ref reader, "gateway", HostsTokenType.Identifier);
 		CheckToken(ref reader, " ", HostsTokenType.Whitespace);
 		CheckToken(ref reader, "router", HostsTokenType.Identifier);
-		CheckToken(ref reader, "\r\n", HostsTokenType.NewLine);
-		CheckToken(ref reader, "\r\n", HostsTokenType.NewLine);
+		CheckToken(ref reader, Environment.NewLine, HostsTokenType.NewLine);
+		CheckToken(ref reader, Environment.NewLine, HostsTokenType.NewLine);
 		CheckToken(ref reader, "1.1.1.1", HostsTokenType.Identifier);
 		CheckToken(ref reader, " ", HostsTokenType.Whitespace);
 		CheckToken(ref reader, "cloudflare", HostsTokenType.Identifier);
