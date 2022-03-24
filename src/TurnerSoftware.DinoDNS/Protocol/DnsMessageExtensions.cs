@@ -1,4 +1,6 @@
-﻿namespace TurnerSoftware.DinoDNS.Protocol;
+﻿using System.Runtime.CompilerServices;
+
+namespace TurnerSoftware.DinoDNS.Protocol;
 
 public static class DnsMessageExtensions
 {
@@ -9,6 +11,10 @@ public static class DnsMessageExtensions
 		Truncation truncation = Truncation.No,
 		AuthoritativeAnswer authoritativeAnswer = AuthoritativeAnswer.No
 	) => DnsMessage.CreateResponse(in message, responseCode, recursionAvailable, truncation, authoritativeAnswer);
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static int WriteTo(this in DnsMessage message, Memory<byte> destination) 
+		=> new DnsProtocolWriter(destination).AppendMessage(in message).BytesWritten;
 
 	public static DnsMessage WithQuestions(this in DnsMessage message, Question[] questions)
 	{

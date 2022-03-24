@@ -100,10 +100,8 @@ public readonly struct DnsProtocolWriter
 
 	public unsafe DnsProtocolWriter AppendLabel(in LabelSequence.Label label)
 	{
-		var bytesWritten = (byte)label.ToBytes(
-			SeekableDestination.Span[1..]
-		);
-		SeekableDestination.Span[0] = bytesWritten;
+		label.Value.TryWriteBytes(SeekableDestination.Span[1..], out var bytesWritten);
+		SeekableDestination.Span[0] = (byte)bytesWritten;
 		return Advance(1 + bytesWritten);
 	}
 

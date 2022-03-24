@@ -9,9 +9,9 @@ namespace TurnerSoftware.DinoDNS.TestServer;
 public class DnsTestServer
 {
 	public const int PortNumber = 5001;
-	public readonly static IPEndPoint ClientEndPoint = new(IPAddress.Loopback, PortNumber);
+	public readonly static IPEndPoint ClientEndPoint = new(System.Net.IPAddress.Loopback, PortNumber);
 
-	private readonly static IPEndPoint ServerEndPoint = new(IPAddress.Loopback, PortNumber);
+	private readonly static IPEndPoint ServerEndPoint = new(System.Net.IPAddress.Loopback, PortNumber);
 
 	public static readonly DnsTestServer Instance = new();
 

@@ -2,40 +2,54 @@
 
 namespace TurnerSoftware.DinoDNS.Protocol.ResourceRecords;
 
-public readonly record struct ARecord
+public readonly record struct ARecord(
+	LabelSequence DomainName,
+	DnsClass Class,
+	uint TimeToLive,
+	DnsRawValue Value
+)
 {
-	public LabelSequence DomainName { get; init; }
-	public DnsClass Class { get; init; }
-	public uint TimeToLive { get; init; }
+	public const int DataLength = 4;
 
+	public ARecord(ResourceRecord record) : this(
+		record.DomainName,
+		record.Class,
+		record.TimeToLive,
+		record.Data
+	)
+	{ }
 
-	private readonly ReadOnlyMemory<byte> _Data;
-	private readonly IPAddress? _IPAddress;
-	public IPAddress IPAddress
+	public IPAddress ToIPAddress()
 	{
-		get => _IPAddress ?? new(_Data.Span);
-		init => _IPAddress = value;
+		Span<byte> ipAddressBytes = stackalloc byte[4];
+		if (Value.TryWriteBytes(ipAddressBytes, out var bytesWritten))
+		{
+			return new IPAddress(ipAddressBytes[..bytesWritten]);
+		}
+		throw new FormatException("Invalid data for IP address");
 	}
 
-	public ARecord(ResourceRecord record)
+	public ResourceRecord AsResourceRecord()
 	{
-		DomainName = record.DomainName;
-		Class = record.Class;
-		TimeToLive = record.TimeToLive;
-		_Data = record.Data;
-		_IPAddress = default;
+		return new ResourceRecord(
+			DomainName,
+			DnsType.A,
+			Class,
+			TimeToLive,
+			DataLength,
+			Value.ByteValue
+		);
 	}
 
-	public static implicit operator ResourceRecord(ARecord record)
+	public static implicit operator ResourceRecord(in ARecord record)
 	{
-		var data = record._IPAddress?.GetAddressBytes().AsMemory() ?? record._Data;
 		return new ResourceRecord(
 			record.DomainName,
 			DnsType.A,
 			record.Class,
 			record.TimeToLive,
-			(ushort)data.Length,
-			data
+			DataLength,
+			record.Value.ByteValue
 		);
 	}
 }

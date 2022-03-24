@@ -34,16 +34,12 @@ public readonly record struct DnsMessage(
 		AuthoritativeAnswer authoritativeAnswer = AuthoritativeAnswer.No
 	) => request with
 	{
-		Header = request.Header with
-		{
-			Flags = request.Header.Flags with
-			{
-				QueryOrResponse = QueryOrResponse.Response,
-				RecursionAvailable = recursionAvailable,
-				AuthoritativeAnswer = authoritativeAnswer,
-				Truncation = truncation,
-				ResponseCode = responseCode
-			}
-		}
+		Header = Header.CreateResponseHeader(
+			request.Header,
+			responseCode,
+			recursionAvailable,
+			truncation,
+			authoritativeAnswer
+		)
 	};
 }

@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
@@ -10,21 +11,23 @@ public readonly partial struct LabelSequence : IEquatable<LabelSequence>
 {
 	private readonly SeekableReadOnlyMemory<byte> ByteValue;
 	private readonly ReadOnlyMemory<char> CharValue;
-	private readonly bool IsByteSequence;
 
 	public LabelSequence(SeekableReadOnlyMemory<byte> value)
 	{
 		ByteValue = value;
 		CharValue = ReadOnlyMemory<char>.Empty;
-		IsByteSequence = true;
 	}
 	public LabelSequence(ReadOnlyMemory<char> value)
 	{
 		ByteValue = default;
 		CharValue = value;
-		IsByteSequence = false;
 	}
 	public LabelSequence(string value) : this(value.AsMemory()) { }
+	public LabelSequence(DnsRawValue value)
+	{
+		ByteValue = value.ByteValue;
+		CharValue = value.CharValue;
+	}
 
 	public Enumerator GetEnumerator() => new(this);
 
@@ -132,9 +135,73 @@ public readonly partial struct LabelSequence : IEquatable<LabelSequence>
 		return true;
 	}
 
+	public override bool Equals([NotNullWhen(true)] object? obj) => obj is LabelSequence value && Equals(value);
+
+	public override int GetHashCode() => HashCode.Combine(ByteValue, CharValue);
+
+	/// <summary>
+	/// Attempts to write the label sequence, in dot-format with trailing dot, to the destination span.
+	/// </summary>
+	/// <remarks>
+	/// Example: <c>www.example.org.</c>
+	/// </remarks>
+	/// <param name="destination"></param>
+	/// <param name="bytesWritten"></param>
+	/// <returns></returns>
+	public bool TryWriteUnencodedBytes(Span<byte> destination, out int bytesWritten)
+	{
+		bytesWritten = 0;
+		if (destination.Length < GetSequenceByteLength())
+		{
+			return false;
+		}
+
+		var offset = 0;
+		foreach (var label in this)
+		{
+			label.Value.TryWriteBytes(destination[offset..], out var localBytesWritten);
+			offset += localBytesWritten;
+			destination[offset] = (byte)'.';
+			offset++;
+		}
+		bytesWritten = offset;
+		return true;
+	}
+
+	/// <summary>
+	/// Attempts to write the label sequence, encoded for the wire protocol with trailing "0" byte, to the destination span.
+	/// </summary>
+	/// <remarks>
+	/// Example: <c>3www7example3org0</c>
+	/// </remarks>
+	/// <param name="destination"></param>
+	/// <param name="bytesWritten"></param>
+	/// <returns></returns>
+	public bool TryWriteEncodedBytes(Span<byte> destination, out int bytesWritten)
+	{
+		bytesWritten = 0;
+		if (destination.Length < GetSequenceByteLength())
+		{
+			return false;
+		}
+
+		var offset = 0;
+		foreach (var label in this)
+		{
+			var segment = destination[offset..];
+			segment[0] = (byte)label.Length;
+			label.Value.TryWriteBytes(segment[1..], out var localBytesWritten);
+			offset += localBytesWritten + 1;
+		}
+
+		destination[offset] = (byte)'0';
+		bytesWritten = offset + 1;
+		return true;
+	}
+
 	public override string ToString()
 	{
-		if (!IsByteSequence)
+		if (!CharValue.IsEmpty)
 		{
 			return CharValue.ToString();
 		}
@@ -157,4 +224,8 @@ public readonly partial struct LabelSequence : IEquatable<LabelSequence>
 	}
 
 	public static implicit operator LabelSequence(string source) => new(source.AsMemory());
+	public static implicit operator LabelSequence(DnsRawValue value) => new(value);
+
+	public static bool operator ==(in LabelSequence left, in LabelSequence right) => left.Equals(right);
+	public static bool operator !=(in LabelSequence left, in LabelSequence right) => !(left == right);
 }

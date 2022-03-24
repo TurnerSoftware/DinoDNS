@@ -12,6 +12,7 @@ public enum DnsType
 	MINFO = 14,
 	MX = 15,
 	TXT = 16,
+	AAAA = 28
 }
 
 
@@ -27,6 +28,7 @@ public enum DnsQueryType
 	MINFO = 14,
 	MX = 15,
 	TXT = 16,
+	AAAA = 28,
 
 	AXFR = 252,
 	ANY = 255

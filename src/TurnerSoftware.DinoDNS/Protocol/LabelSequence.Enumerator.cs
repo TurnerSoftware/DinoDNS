@@ -20,7 +20,7 @@ public readonly partial struct LabelSequence
 		internal Enumerator(LabelSequence value)
 		{
 			Value = value;
-			Index = value.IsByteSequence ? value.ByteValue.Offset : 0;
+			Index = value.CharValue.IsEmpty ? value.ByteValue.Offset : 0;
 			CurrentLabel = default;
 		}
 
@@ -41,7 +41,7 @@ public readonly partial struct LabelSequence
 			}
 
 			var value = indexSlice[..nextIndex];
-			CurrentLabel = new Label(value);
+			CurrentLabel = new Label(value, false);
 			Index += (foundSeparator ? nextIndex + 1 : nextIndex);
 			return true;
 		}
@@ -77,7 +77,7 @@ public readonly partial struct LabelSequence
 
 		public bool MoveNext()
 		{
-			if (Value.IsByteSequence)
+			if (Value.CharValue.IsEmpty)
 			{
 				return NextByteLabel();
 			}

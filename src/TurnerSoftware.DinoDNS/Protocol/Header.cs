@@ -24,6 +24,30 @@ public readonly record struct Header(
 	/// </summary>
 	internal static readonly Vector128<byte> EndianShuffle = Vector128.Create((byte)1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, /* <- Header End */ 12, 13, 14, 15);
 
+	public static Header CreateResponseHeader(
+		Header requestHeader,
+		ResponseCode responseCode,
+		RecursionAvailable recursionAvailable = RecursionAvailable.No,
+		Truncation truncation = Truncation.No,
+		AuthoritativeAnswer authoritativeAnswer = AuthoritativeAnswer.No,
+		ushort answerRecordCount = 0,
+		ushort authorityRecordCount = 0,
+		ushort additionalRecordCount = 0
+	) => requestHeader with
+	{
+		Flags = requestHeader.Flags with
+		{
+			QueryOrResponse = QueryOrResponse.Response,
+			RecursionAvailable = recursionAvailable,
+			AuthoritativeAnswer = authoritativeAnswer,
+			Truncation = truncation,
+			ResponseCode = responseCode
+		},
+		AnswerRecordCount = answerRecordCount,
+		AuthorityRecordCount = authorityRecordCount,
+		AdditionalRecordCount = additionalRecordCount
+	};
+
 	public override string ToString()
 	{
 		var flags = Flags.ToString();
