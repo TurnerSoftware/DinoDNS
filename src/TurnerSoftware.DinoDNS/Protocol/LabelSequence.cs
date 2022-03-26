@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
@@ -106,16 +107,67 @@ public readonly partial struct LabelSequence : IEquatable<LabelSequence>
 		return sequentialBytes;
 	}
 
-	public int GetSequenceByteLength()
+	public unsafe int GetSequenceByteLength()
 	{
 		var sequenceLength = 0;
-		foreach (var label in this)
+
+		if (Avx2.IsSupported && CharValue.IsEmpty)
 		{
-			//The "+1" is because each label starts with a number
-			sequenceLength += label.Length + 1;
+			var labelPointer = Vector256.Create((byte)(PointerFlagByte - 1));
+			var endOfLabel = Vector256<byte>.Zero;
+
+			fixed (byte* fixedBytePtr = ByteValue.Source.Span)
+			{
+				var index = ByteValue.Offset;
+				var length = ByteValue.Source.Length;
+				while (index < length)
+				{
+					var bytePtr = fixedBytePtr + index;
+					var data = Avx.LoadVector256(bytePtr);
+					var endLabelIndex = BitOperations.TrailingZeroCount(
+						(uint)Avx2.MoveMask(
+							Avx2.CompareEqual(endOfLabel, data)
+						)
+					);
+					var labelPointerIndex = BitOperations.TrailingZeroCount(
+						(uint)Avx2.MoveMask(
+							Avx2.CompareEqual(
+								labelPointer,
+								Avx2.Max(labelPointer, data)
+							)
+						) ^ uint.MaxValue
+					);
+
+					if (endLabelIndex == Vector256<byte>.Count && labelPointerIndex == Vector256<byte>.Count)
+					{
+						index += Vector256<byte>.Count;
+						sequenceLength += Vector256<byte>.Count;
+					}
+					else if (endLabelIndex < labelPointerIndex)
+					{
+						sequenceLength += endLabelIndex + 1;
+						break;
+					}
+					else
+					{
+						var labelPointerSpan = new Span<byte>(bytePtr + labelPointerIndex, 2);
+						index = BinaryPrimitives.ReadUInt16BigEndian(labelPointerSpan) & PointerOffsetBits;
+						sequenceLength += labelPointerIndex;
+					}
+				}
+			}
 		}
-		//Add the final 0-length label byte
-		sequenceLength += 1;
+		else
+		{
+			foreach (var label in this)
+			{
+				//The "+1" is because each label starts with a number
+				sequenceLength += label.Length + 1;
+			}
+			//Add the final 0-length label byte
+			sequenceLength += 1;
+		}
+
 		return sequenceLength;
 	}
 

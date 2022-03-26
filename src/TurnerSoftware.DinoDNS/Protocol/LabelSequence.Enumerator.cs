@@ -6,6 +6,7 @@ namespace TurnerSoftware.DinoDNS.Protocol;
 public readonly partial struct LabelSequence
 {
 	public const ushort PointerFlagByte = 0b11000000;
+	public const ushort PointerOffsetBits = 0b00111111_11111111;
 	public const byte PointerLength = sizeof(ushort);
 
 	public struct Enumerator : IEnumerator<Label>
