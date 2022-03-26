@@ -1,4 +1,4 @@
-﻿using TurnerSoftware.DinoDNS.Connection;
+﻿using TurnerSoftware.DinoDNS.Connection.Listeners;
 using TurnerSoftware.DinoDNS.Protocol;
 using TurnerSoftware.DinoDNS.TestServer;
 
@@ -10,29 +10,29 @@ try
 		cancellationTokenSource.Cancel();
 	});
 
-	IDnsConnectionServer? server = null;
+	IDnsQueryListener? server = null;
 	var protocol = args.Length > 0 ? args[0] : "udp";
 	switch (protocol)
 	{
 		case "tcp":
 			Console.WriteLine("TCP server started!");
-			server = TcpConnectionServer.Instance;
+			server = TcpQueryListener.Instance;
 			break;
 		case "tls":
 			Console.WriteLine("TLS server started!");
-			server = new TlsConnectionServer(new System.Net.Security.SslServerAuthenticationOptions
+			server = new TlsQueryListener(new System.Net.Security.SslServerAuthenticationOptions
 			{
 				ServerCertificate = DnsTestServer.CreateTemporaryCertificate()
 			});
 			break;
 		case "https":
 			Console.WriteLine("HTTPS server started!");
-			server = new HttpsConnectionServer(DnsTestServer.CreateTemporaryCertificate());
+			server = new HttpsQueryListener(DnsTestServer.CreateTemporaryCertificate());
 			break;
 		case "udp":
 		default:
 			Console.WriteLine("UDP server started!");
-			server = UdpConnectionServer.Instance;
+			server = UdpQueryListener.Instance;
 			break;
 	}
 

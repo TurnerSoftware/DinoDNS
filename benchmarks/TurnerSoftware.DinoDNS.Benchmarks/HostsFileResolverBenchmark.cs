@@ -1,15 +1,15 @@
 ﻿using System.Net;
 using BenchmarkDotNet.Attributes;
-using TurnerSoftware.DinoDNS.Connection;
+using TurnerSoftware.DinoDNS.Connection.Resolvers;
 using TurnerSoftware.DinoDNS.Protocol;
 using TurnerSoftware.DinoDNS.TestServer;
 
 namespace TurnerSoftware.DinoDNS.Benchmarks;
 
 [Config(typeof(DefaultBenchmarkConfig))]
-public class HostsFileConnectionBenchmark
+public class HostsFileResolverBenchmark
 {
-	private HostsFileConnectionClient? Client { get; set; }
+	private HostsFileResolver? Client { get; set; }
 
 	private readonly IPEndPoint Endpoint = IPEndPoint.Parse("127.0.0.1:53");
 	private ReadOnlyMemory<byte> RequestMessage;
@@ -19,7 +19,7 @@ public class HostsFileConnectionBenchmark
 	public void Setup()
 	{
 		var hostsFile = new DnsHostsFile();
-		Client = new HostsFileConnectionClient(hostsFile);
+		Client = new HostsFileResolver(hostsFile);
 		hostsFile.Add("test.www.example.org", new byte[] { 192, 168, 0, 1 });
 
 		var data = new byte[1024].AsMemory();

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TurnerSoftware.DinoDNS.Connection;
+using TurnerSoftware.DinoDNS.Connection.Listeners;
 using TurnerSoftware.DinoDNS.Protocol;
 using TurnerSoftware.DinoDNS.TestServer;
 
@@ -12,7 +13,7 @@ public class TlsConnectionTests
 {
 	public static IAsyncDisposable RunTestServer(Func<DnsMessage, DnsMessage> getResponse)
 	{
-		return DnsTestServer.Instance.Run(new TlsConnectionServer(new System.Net.Security.SslServerAuthenticationOptions
+		return DnsTestServer.Instance.Run(new TlsQueryListener(new System.Net.Security.SslServerAuthenticationOptions
 		{
 			ServerCertificate = DnsTestServer.CreateTemporaryCertificate()
 		}), getResponse);
@@ -25,7 +26,7 @@ public class TlsConnectionTests
 
 		var client = new DnsClient(new NameServer[]
 		{
-			new(DnsTestServer.ClientEndPoint, new TlsConnectionClient(TlsConnectionClient.AuthOptions.DoNotValidate)) 
+			new(DnsTestServer.ClientEndPoint, new TlsResolver(TlsResolver.AuthOptions.DoNotValidate)) 
 		}, DnsMessageOptions.Default);
 
 		var response = await client.SendAsync(DnsTestServer.ExampleData.Request);

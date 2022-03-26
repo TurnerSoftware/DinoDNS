@@ -11,7 +11,7 @@ public class HttpsStackBenchmark : NetworkStackBenchmark
 	{
 		base.Setup();
 
-		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(ServerEndPoint, new HttpsConnectionClient(HttpConnectionClientOptions.Insecure)) }, DnsMessageOptions.Default);
+		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(ServerEndPoint, new HttpsResolver(HttpConnectionClientOptions.Insecure)) }, DnsMessageOptions.Default);
 
 		ExternalTestServer.StartHttps();
 	}

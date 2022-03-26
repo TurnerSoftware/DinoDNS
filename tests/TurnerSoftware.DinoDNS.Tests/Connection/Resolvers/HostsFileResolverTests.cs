@@ -6,13 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TurnerSoftware.DinoDNS.Connection;
+using TurnerSoftware.DinoDNS.Connection.Resolvers;
 using TurnerSoftware.DinoDNS.Protocol;
 using TurnerSoftware.DinoDNS.TestServer;
 
 namespace TurnerSoftware.DinoDNS.Tests.Connection;
 
 [TestClass]
-public class HostsFileConnectionTests
+public class HostsFileResolverTests
 {
 	[DataTestMethod]
 	[DataRow("test.example.org", "test.example.org", "192.168.0.1", DnsQueryType.A, DisplayName = "A Record")]
@@ -23,7 +24,7 @@ public class HostsFileConnectionTests
 		var hostsFile = new DnsHostsFile();
 		var dnsClient = new DnsClient(new[]
 		{
-			new NameServer(new IPEndPoint(IPAddress.Loopback, 53), new HostsFileConnectionClient(hostsFile))
+			new NameServer(new IPEndPoint(IPAddress.Loopback, 53), new HostsFileResolver(hostsFile))
 		}, DnsMessageOptions.Default);
 		hostsFile.Add(storedHost, address);
 

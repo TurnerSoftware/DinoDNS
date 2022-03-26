@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TurnerSoftware.DinoDNS.Connection;
+using TurnerSoftware.DinoDNS.Connection.Listeners;
 using TurnerSoftware.DinoDNS.Protocol;
 using TurnerSoftware.DinoDNS.TestServer;
 
@@ -12,7 +13,7 @@ public class HttpsConnectionTests
 {
 	public static IAsyncDisposable RunTestServer(Func<DnsMessage, DnsMessage> getResponse)
 	{
-		return DnsTestServer.Instance.Run(new HttpsConnectionServer(DnsTestServer.CreateTemporaryCertificate()), getResponse);
+		return DnsTestServer.Instance.Run(new HttpsQueryListener(DnsTestServer.CreateTemporaryCertificate()), getResponse);
 	}
 
 	[TestMethod]
@@ -22,7 +23,7 @@ public class HttpsConnectionTests
 
 		var client = new DnsClient(new NameServer[]
 		{
-			new(DnsTestServer.ClientEndPoint, new HttpsConnectionClient(HttpConnectionClientOptions.Insecure)) 
+			new(DnsTestServer.ClientEndPoint, new HttpsResolver(HttpConnectionClientOptions.Insecure)) 
 		}, DnsMessageOptions.Default);
 
 		var response = await client.SendAsync(DnsTestServer.ExampleData.Request);

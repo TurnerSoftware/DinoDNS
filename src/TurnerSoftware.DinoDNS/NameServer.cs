@@ -3,7 +3,7 @@ using TurnerSoftware.DinoDNS.Connection;
 
 namespace TurnerSoftware.DinoDNS;
 
-public readonly record struct NameServer(IPEndPoint EndPoint, IDnsConnectionClient Connection)
+public readonly record struct NameServer(IPEndPoint EndPoint, IDnsResolver Connection)
 {
 	public NameServer(IPAddress address, ConnectionType connectionType)
 		: this(address, NameServers.GetDefaultPort(connectionType), connectionType) { }
@@ -16,13 +16,13 @@ public readonly record struct NameServer(IPEndPoint EndPoint, IDnsConnectionClie
 
 	public static implicit operator NameServer(IPAddress address) => new(address, ConnectionType.Udp);
 
-	public static IDnsConnectionClient GetDefaultConnectionClient(ConnectionType connectionType) => connectionType switch
+	public static IDnsResolver GetDefaultConnectionClient(ConnectionType connectionType) => connectionType switch
 	{
-		ConnectionType.Udp => UdpConnectionClient.Instance,
-		ConnectionType.Tcp => TcpConnectionClient.Instance,
-		ConnectionType.UdpWithTcpFallback => UdpTcpConnectionClient.Instance,
-		ConnectionType.DoH => HttpsConnectionClient.Instance,
-		ConnectionType.DoT => TlsConnectionClient.Instance,
+		ConnectionType.Udp => UdpResolver.Instance,
+		ConnectionType.Tcp => TcpResolver.Instance,
+		ConnectionType.UdpWithTcpFallback => UdpTcpDualResolver.Instance,
+		ConnectionType.DoH => HttpsResolver.Instance,
+		ConnectionType.DoT => TlsResolver.Instance,
 		_ => throw new NotImplementedException()
 	};
 }

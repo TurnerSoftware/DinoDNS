@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TurnerSoftware.DinoDNS.Connection;
+using TurnerSoftware.DinoDNS.Connection.Listeners;
 using TurnerSoftware.DinoDNS.Protocol;
 using TurnerSoftware.DinoDNS.TestServer;
 
@@ -12,7 +13,7 @@ public class UdpConnectionTests
 {
 	public static IAsyncDisposable RunTestServer(Func<DnsMessage, DnsMessage> getResponse)
 	{
-		return DnsTestServer.Instance.Run(new UdpConnectionServer(), getResponse);
+		return DnsTestServer.Instance.Run(new UdpQueryListener(), getResponse);
 	}
 
 	[TestMethod]
@@ -22,7 +23,7 @@ public class UdpConnectionTests
 
 		var client = new DnsClient(new NameServer[]
 		{
-			new(DnsTestServer.ClientEndPoint, new UdpConnectionClient()) 
+			new(DnsTestServer.ClientEndPoint, new UdpResolver()) 
 		}, DnsMessageOptions.Default);
 
 		var response = await client.SendAsync(DnsTestServer.ExampleData.Request);

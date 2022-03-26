@@ -11,7 +11,7 @@ public class TlsStackBenchmark : NetworkStackBenchmark
 	{
 		base.Setup();
 
-		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(ServerEndPoint, new TlsConnectionClient(TlsConnectionClient.AuthOptions.DoNotValidate)) }, DnsMessageOptions.Default);
+		DinoDNS_DnsClient = new DnsClient(new NameServer[] { new(ServerEndPoint, new TlsResolver(TlsResolver.AuthOptions.DoNotValidate)) }, DnsMessageOptions.Default);
 
 		ExternalTestServer.StartTls();
 	}

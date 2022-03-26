@@ -34,7 +34,7 @@ public abstract class DnsServerBase
 
 		foreach (var server in EndPoints)
 		{
-			_ = server.Connection.ListenAsync(server.EndPoint, OnReceiveAsync, Options, TokenSource.Token);
+			_ = server.QueryListener.ListenAsync(server.EndPoint, OnReceiveAsync, Options, TokenSource.Token);
 		}
 	}
 

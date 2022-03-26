@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using TurnerSoftware.DinoDNS.Connection;
+using TurnerSoftware.DinoDNS.Connection.Listeners;
 using TurnerSoftware.DinoDNS.Protocol;
 
 namespace TurnerSoftware.DinoDNS.TestServer;
@@ -19,12 +19,12 @@ public class DnsTestServer
 
 	private readonly List<Task> StartedTasks = new();
 
-	public IAsyncDisposable Run(IDnsConnectionServer server, Func<DnsMessage, DnsMessage> getResponse)
+	public IAsyncDisposable Run(IDnsQueryListener server, Func<DnsMessage, DnsMessage> getResponse)
 	{
 		StartedTasks.Add(StartAsync(server, getResponse));
 		return new Disposable(this);
 	}
-	public async Task StartAsync(IDnsConnectionServer server, Func<DnsMessage, DnsMessage> getResponse, CancellationToken cancellationToken = default)
+	public async Task StartAsync(IDnsQueryListener server, Func<DnsMessage, DnsMessage> getResponse, CancellationToken cancellationToken = default)
 	{
 		await StopAsync();
 		CancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
