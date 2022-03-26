@@ -246,7 +246,7 @@ public readonly partial struct LabelSequence : IEquatable<LabelSequence>
 			offset += localBytesWritten + 1;
 		}
 
-		destination[offset] = (byte)'0';
+		destination[offset] = 0;
 		bytesWritten = offset + 1;
 		return true;
 	}
