@@ -32,53 +32,68 @@ public readonly partial struct LabelSequence : IEquatable<LabelSequence>
 
 	public Enumerator GetEnumerator() => new(this);
 
+	private unsafe int UnsafeByteCount(bool countOnlySequentialBytes)
+	{
+		var byteCount = 0;
+		var labelPointer = Vector256.Create((byte)(PointerFlagByte - 1));
+		var endOfLabel = Vector256<byte>.Zero;
+
+		fixed (byte* fixedBytePtr = ByteValue.Source.Span)
+		{
+			var index = ByteValue.Offset;
+			var length = ByteValue.Source.Length;
+			while (index < length)
+			{
+				var bytePtr = fixedBytePtr + index;
+				var data = Avx.LoadVector256(bytePtr);
+				var endLabelIndex = BitOperations.TrailingZeroCount(
+					(uint)Avx2.MoveMask(
+						Avx2.CompareEqual(endOfLabel, data)
+					)
+				);
+				var labelPointerIndex = BitOperations.TrailingZeroCount(
+					(uint)Avx2.MoveMask(
+						Avx2.CompareEqual(
+							labelPointer,
+							Avx2.Max(labelPointer, data)
+						)
+					) ^ uint.MaxValue
+				);
+
+				if (endLabelIndex == Vector256<byte>.Count && labelPointerIndex == Vector256<byte>.Count)
+				{
+					index += Vector256<byte>.Count;
+					byteCount += Vector256<byte>.Count;
+				}
+				else if (endLabelIndex < labelPointerIndex)
+				{
+					byteCount += endLabelIndex + 1;
+					break;
+				}
+				else if (countOnlySequentialBytes)
+				{
+					byteCount += labelPointerIndex + PointerLength;
+					break;
+				}
+				else
+				{
+					var labelPointerSpan = new Span<byte>(bytePtr + labelPointerIndex, 2);
+					index = BinaryPrimitives.ReadUInt16BigEndian(labelPointerSpan) & PointerOffsetBits;
+					byteCount += labelPointerIndex;
+				}
+			}
+		}
+
+		return byteCount;
+	}
+
 	public unsafe int GetSequentialByteLength()
 	{
 		var sequentialBytes = 0;
 
 		if (Avx2.IsSupported)
 		{
-			var labelPointer = Vector256.Create((byte)(PointerFlagByte - 1));
-			var endOfLabel = Vector256<byte>.Zero;
-
-			fixed (byte* fixedBytePtr = ByteValue.Span)
-			{
-				var index = 0;
-				while (index < ByteValue.Span.Length)
-				{
-					var bytePtr = fixedBytePtr;
-					var data = Avx.LoadVector256(bytePtr);
-					var endLabelIndex = BitOperations.TrailingZeroCount(
-						(uint)Avx2.MoveMask(
-							Avx2.CompareEqual(endOfLabel, data)
-						)
-					);
-					var labelPointerIndex = BitOperations.TrailingZeroCount(
-						(uint)Avx2.MoveMask(
-							Avx2.CompareEqual(
-								labelPointer,
-								Avx2.Max(labelPointer, data)
-							)
-						) ^ uint.MaxValue
-					);
-
-					if (endLabelIndex == Vector256<byte>.Count && labelPointerIndex == Vector256<byte>.Count)
-					{
-						index += Vector256<byte>.Count;
-						sequentialBytes += Vector256<byte>.Count;
-					}
-					else if (endLabelIndex < labelPointerIndex)
-					{
-						sequentialBytes += endLabelIndex + 1;
-						break;
-					}
-					else
-					{
-						sequentialBytes += labelPointerIndex + PointerLength;
-						break;
-					}
-				}
-			}
+			sequentialBytes = UnsafeByteCount(countOnlySequentialBytes: true);
 		}
 		else
 		{
@@ -111,51 +126,18 @@ public readonly partial struct LabelSequence : IEquatable<LabelSequence>
 	{
 		var sequenceLength = 0;
 
-		if (Avx2.IsSupported && CharValue.IsEmpty)
+		if (!CharValue.IsEmpty)
 		{
-			var labelPointer = Vector256.Create((byte)(PointerFlagByte - 1));
-			var endOfLabel = Vector256<byte>.Zero;
-
-			fixed (byte* fixedBytePtr = ByteValue.Source.Span)
-			{
-				var index = ByteValue.Offset;
-				var length = ByteValue.Source.Length;
-				while (index < length)
-				{
-					var bytePtr = fixedBytePtr + index;
-					var data = Avx.LoadVector256(bytePtr);
-					var endLabelIndex = BitOperations.TrailingZeroCount(
-						(uint)Avx2.MoveMask(
-							Avx2.CompareEqual(endOfLabel, data)
-						)
-					);
-					var labelPointerIndex = BitOperations.TrailingZeroCount(
-						(uint)Avx2.MoveMask(
-							Avx2.CompareEqual(
-								labelPointer,
-								Avx2.Max(labelPointer, data)
-							)
-						) ^ uint.MaxValue
-					);
-
-					if (endLabelIndex == Vector256<byte>.Count && labelPointerIndex == Vector256<byte>.Count)
-					{
-						index += Vector256<byte>.Count;
-						sequenceLength += Vector256<byte>.Count;
-					}
-					else if (endLabelIndex < labelPointerIndex)
-					{
-						sequenceLength += endLabelIndex + 1;
-						break;
-					}
-					else
-					{
-						var labelPointerSpan = new Span<byte>(bytePtr + labelPointerIndex, 2);
-						index = BinaryPrimitives.ReadUInt16BigEndian(labelPointerSpan) & PointerOffsetBits;
-						sequenceLength += labelPointerIndex;
-					}
-				}
-			}
+			//Strings are not byte encoded but they can be encoded with a trailing dot.
+			//In byte encoding, each label starts with a number and the whole sequence ends with a trailing NUL byte.
+			//If we see a trailing dot, we don't want to treat that as our NUL byte.
+			//The "+1" represents the leading number for the first label.
+			var hasTrailingDot = CharValue.Span[^1] == '.';
+			sequenceLength = CharValue.Length + 1 + Convert.ToByte(!hasTrailingDot);
+		}
+		else if (Avx2.IsSupported)
+		{
+			sequenceLength = UnsafeByteCount(countOnlySequentialBytes: false);
 		}
 		else
 		{
