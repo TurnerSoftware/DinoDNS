@@ -39,12 +39,14 @@ public readonly partial struct LabelSequence
 			var foundSeparator = nextIndex != -1;
 			if (!foundSeparator)
 			{
-				nextIndex = indexSlice.Length;
+				CurrentLabel = new Label(indexSlice, false);
+				Index += indexSlice.Length;
+				return true;
 			}
 
 			var value = indexSlice[..nextIndex];
 			CurrentLabel = new Label(value, false);
-			Index += (foundSeparator ? nextIndex + 1 : nextIndex);
+			Index += nextIndex + 1;
 			return true;
 		}
 
