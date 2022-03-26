@@ -94,7 +94,7 @@ public readonly struct DnsProtocolWriter
 	public DnsProtocolWriter AppendPointer(ushort offset)
 	{
 		//Set the first 2-bits of the value to correctly encode the pointer before writing.
-		offset |= 0b11000000_00000000;
+		offset |= LabelSequence.PointerFlagBits;
 		return AppendUInt16(offset);
 	}
 
@@ -112,14 +112,8 @@ public readonly struct DnsProtocolWriter
 	/// <returns></returns>
 	public DnsProtocolWriter AppendLabelSequence(in LabelSequence labelSequence)
 	{
-		var writer = this;
-		//We can't use the Label Sequence ByteValue directly because we don't know if it contains a pointer.
-		//This is a problem as the pointer may not be intended to match the written data.
-		foreach (var label in labelSequence)
-		{
-			writer = writer.AppendLabel(in label);
-		}
-		return writer.AppendLabelSequenceEnd();
+		labelSequence.TryWriteEncodedBytes(SeekableDestination.Span, out var bytesWritten);
+		return Advance(bytesWritten);
 	}
 
 	/// <summary>
