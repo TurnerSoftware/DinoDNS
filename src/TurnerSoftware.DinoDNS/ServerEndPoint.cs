@@ -22,7 +22,7 @@ public readonly record struct ServerEndPoint(IPEndPoint EndPoint, IDnsConnection
 	public static IDnsConnectionServer GetDefaultConnectionServer(ConnectionType connectionType) => connectionType switch
 	{
 		ConnectionType.Udp => UdpConnectionServer.Instance,
-		//ConnectionType.Tcp => TcpConnectionServer.Instance,
+		ConnectionType.Tcp => TcpConnectionServer.Instance,
 		//ConnectionType.DoH => HttpsConnectionServer.Instance,
 		//ConnectionType.DoT => TlsConnectionServer.Instance,
 		_ => throw new NotImplementedException()
