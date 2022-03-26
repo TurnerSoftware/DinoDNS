@@ -61,7 +61,7 @@ public readonly partial struct LabelSequence
 				//Pointers are a part of DNS message compression.
 				//The first two bits say whether it is a pointer or not.
 				//The next 14 bits represent the offset from the beginning of the message.
-				var offset = BinaryPrimitives.ReadUInt16BigEndian(seekableMemory) & 0b00111111_11111111;
+				var offset = BinaryPrimitives.ReadUInt16BigEndian(seekableMemory) & PointerOffsetBits;
 				seekableMemory = seekableMemory.Seek(offset);
 				countOrPointer = seekableMemory.Current;
 				fromPointer = true;
