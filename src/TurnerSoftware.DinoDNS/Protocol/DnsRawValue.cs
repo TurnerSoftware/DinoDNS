@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace TurnerSoftware.DinoDNS.Protocol;
@@ -46,6 +47,7 @@ public readonly struct DnsRawValue : IEquatable<DnsRawValue>
 	}
 
 	public bool Equals(ReadOnlySpan<char> other) => EqualsHelper(other, false);
+	[SkipLocalsInit]
 	private bool EqualsHelper(ReadOnlySpan<char> other, bool ignoreCase)
 	{
 		if (!ByteValue.IsEmpty)
@@ -78,6 +80,7 @@ public readonly struct DnsRawValue : IEquatable<DnsRawValue>
 	}
 
 	public bool Equals(ReadOnlySpan<byte> other) => EqualsHelper(other, false);
+	[SkipLocalsInit]
 	private bool EqualsHelper(ReadOnlySpan<byte> other, bool ignoreCase)
 	{
 		if (!CharValue.IsEmpty)
@@ -124,6 +127,7 @@ public readonly struct DnsRawValue : IEquatable<DnsRawValue>
 	public override bool Equals(object? obj) => obj is DnsRawValue value && Equals(value);
 
 	public override int GetHashCode() => GetHashCode(false);
+	[SkipLocalsInit]
 	private int GetHashCode(bool ignoreCase)
 	{
 		if (!ByteValue.IsEmpty)
