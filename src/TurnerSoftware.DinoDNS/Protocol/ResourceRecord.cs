@@ -10,7 +10,7 @@
 /// <param name="ResourceDataLength"></param>
 /// <param name="Data"></param>
 public readonly record struct ResourceRecord(
-	LabelSequence DomainName,
+	in LabelSequence DomainName,
 	DnsType Type,
 	DnsClass Class,
 	uint TimeToLive,
@@ -18,7 +18,7 @@ public readonly record struct ResourceRecord(
 	ReadOnlyMemory<byte> Data
 ) : IEquatable<ResourceRecord>
 {
-	public bool Equals(ResourceRecord other) => 
+	public bool Equals(in ResourceRecord other) => 
 		DomainName.Equals(other.DomainName) &&
 		Type == other.Type &&
 		Class == other.Class &&
@@ -28,5 +28,5 @@ public readonly record struct ResourceRecord(
 
 	public override int GetHashCode() => HashCode.Combine(DomainName, Type, Class, TimeToLive, ResourceDataLength, Data);
 
-	public override string ToString() => $"DomainName:{DomainName.ToString()},Type:{Type},CLASS:{Class},TTL:{TimeToLive},Length:{ResourceDataLength}";
+	public override string ToString() => $"DomainName:{DomainName},Type:{Type},CLASS:{Class},TTL:{TimeToLive},Length:{ResourceDataLength}";
 }

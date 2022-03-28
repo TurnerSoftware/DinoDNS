@@ -19,7 +19,7 @@ public readonly partial struct LabelSequence
 		public readonly Label Current => CurrentLabel;
 		readonly object IEnumerator.Current => CurrentLabel;
 
-		internal Enumerator(LabelSequence value)
+		internal Enumerator(in LabelSequence value)
 		{
 			Value = value;
 			Index = value.CharValue.IsEmpty ? value.ByteValue.Offset : 0;
