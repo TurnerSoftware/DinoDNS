@@ -30,6 +30,6 @@ public abstract class NetworkStackBenchmark
 
 		RawMessage = messageBytes;
 
-		ServerEndPoint = DnsTestServer.ClientEndPoint;
+		ServerEndPoint = DnsTestServer.DefaultEndPoint;
 	}
 }

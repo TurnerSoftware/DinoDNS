@@ -23,7 +23,7 @@ public class TcpConnectionTests
 
 		var client = new DnsClient(new NameServer[]
 		{
-			new(DnsTestServer.ClientEndPoint, new TcpResolver()) 
+			new(DnsTestServer.DefaultEndPoint, new TcpResolver()) 
 		}, DnsMessageOptions.Default);
 
 		var response = await client.SendAsync(DnsTestServer.ExampleData.Request);

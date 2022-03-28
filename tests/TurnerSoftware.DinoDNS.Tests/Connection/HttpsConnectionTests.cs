@@ -23,7 +23,7 @@ public class HttpsConnectionTests
 
 		var client = new DnsClient(new NameServer[]
 		{
-			new(DnsTestServer.ClientEndPoint, new HttpsResolver(HttpConnectionClientOptions.Insecure)) 
+			new(DnsTestServer.DefaultEndPoint, new HttpsResolver(HttpConnectionClientOptions.Insecure)) 
 		}, DnsMessageOptions.Default);
 
 		var response = await client.SendAsync(DnsTestServer.ExampleData.Request);

@@ -9,9 +9,7 @@ namespace TurnerSoftware.DinoDNS.TestServer;
 public class DnsTestServer
 {
 	public const int PortNumber = 5001;
-	public readonly static IPEndPoint ClientEndPoint = new(System.Net.IPAddress.Loopback, PortNumber);
-
-	private readonly static IPEndPoint ServerEndPoint = new(System.Net.IPAddress.Loopback, PortNumber);
+	public readonly static IPEndPoint DefaultEndPoint = new(IPAddress.Loopback, PortNumber);
 
 	public static readonly DnsTestServer Instance = new();
 
@@ -24,13 +22,14 @@ public class DnsTestServer
 		StartedTasks.Add(StartAsync(server, getResponse));
 		return new Disposable(this);
 	}
-	public async Task StartAsync(IDnsQueryListener server, Func<DnsMessage, DnsMessage> getResponse, CancellationToken cancellationToken = default)
+	public async Task StartAsync(IDnsQueryListener server, Func<DnsMessage, DnsMessage> getResponse, IPEndPoint? serverEndPoint = null, CancellationToken cancellationToken = default)
 	{
 		await StopAsync();
 		CancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 		try
 		{
-			await server.ListenAsync(ServerEndPoint, (requestBuffer, responseBuffer, token) =>
+			var endPoint = serverEndPoint ?? DefaultEndPoint;
+			await server.ListenAsync(DefaultEndPoint, (requestBuffer, responseBuffer, token) =>
 			{
 				new DnsProtocolReader(requestBuffer).ReadMessage(out var message);
 				var responseMessage = getResponse(message);

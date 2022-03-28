@@ -42,7 +42,7 @@ try
 		{
 			Answers = DnsTestServer.ExampleData.Response.Answers
 		},
-		cancellationTokenSource.Token
+		cancellationToken: cancellationTokenSource.Token
 	);
 }
 catch (OperationCanceledException)

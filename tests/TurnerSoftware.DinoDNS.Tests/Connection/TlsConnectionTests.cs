@@ -26,7 +26,7 @@ public class TlsConnectionTests
 
 		var client = new DnsClient(new NameServer[]
 		{
-			new(DnsTestServer.ClientEndPoint, new TlsResolver(TlsResolver.AuthOptions.DoNotValidate)) 
+			new(DnsTestServer.DefaultEndPoint, new TlsResolver(TlsResolver.AuthOptions.DoNotValidate)) 
 		}, DnsMessageOptions.Default);
 
 		var response = await client.SendAsync(DnsTestServer.ExampleData.Request);

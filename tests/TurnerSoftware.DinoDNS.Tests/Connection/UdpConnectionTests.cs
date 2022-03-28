@@ -23,7 +23,7 @@ public class UdpConnectionTests
 
 		var client = new DnsClient(new NameServer[]
 		{
-			new(DnsTestServer.ClientEndPoint, new UdpResolver()) 
+			new(DnsTestServer.DefaultEndPoint, new UdpResolver()) 
 		}, DnsMessageOptions.Default);
 
 		var response = await client.SendAsync(DnsTestServer.ExampleData.Request);
