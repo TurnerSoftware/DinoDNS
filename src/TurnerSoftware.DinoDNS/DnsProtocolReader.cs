@@ -45,41 +45,41 @@ public readonly struct DnsProtocolReader
 
 	public unsafe DnsProtocolReader ReadHeader(out Header header)
 	{
-		if (Ssse3.IsSupported)
+		if (BitConverter.IsLittleEndian)
 		{
-			ref var byteRef = ref MemoryMarshal.GetReference(SeekableSource.Span);
-			if (BitConverter.IsLittleEndian)
+			if (Ssse3.IsSupported)
 			{
+				ref var byteRef = ref MemoryMarshal.GetReference(SeekableSource.Span);
 				var headerVector = Unsafe.As<byte, Vector128<byte>>(ref byteRef);
 				headerVector = Ssse3.Shuffle(headerVector, Header.EndianShuffle);
 				header = Unsafe.As<Vector128<byte>, Header>(ref headerVector);
 			}
 			else
 			{
-				header = Unsafe.As<byte, Header>(ref byteRef);
+				ReadUInt16(out var identification)
+				   .ReadUInt16(out var headerFlags)
+				   .ReadUInt16(out var questionRecordCount)
+				   .ReadUInt16(out var answerRecordCount)
+				   .ReadUInt16(out var authorityRecordCount)
+				   .ReadUInt16(out var additionalRecordCount);
+
+				header = new Header(
+					identification,
+					new HeaderFlags(headerFlags),
+					questionRecordCount,
+					answerRecordCount,
+					authorityRecordCount,
+					additionalRecordCount
+				);
 			}
-			return Advance(Header.Length);
 		}
 		else
 		{
-			var reader = ReadUInt16(out var identification)
-				.ReadUInt16(out var headerFlags)
-				.ReadUInt16(out var questionRecordCount)
-				.ReadUInt16(out var answerRecordCount)
-				.ReadUInt16(out var authorityRecordCount)
-				.ReadUInt16(out var additionalRecordCount);
-
-			header = new Header(
-				identification,
-				new HeaderFlags(headerFlags),
-				questionRecordCount,
-				answerRecordCount,
-				authorityRecordCount,
-				additionalRecordCount
-			);
-
-			return reader;
+			ref var byteRef = ref MemoryMarshal.GetReference(SeekableSource.Span);
+			header = Unsafe.As<byte, Header>(ref byteRef);
 		}
+
+		return Advance(Header.Length);
 	}
 
 	public DnsProtocolReader ReadQuestion(out Question question)
