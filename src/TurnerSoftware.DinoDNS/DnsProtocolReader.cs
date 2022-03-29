@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using TurnerSoftware.DinoDNS.Internal;
@@ -46,16 +47,18 @@ public readonly struct DnsProtocolReader
 	{
 		if (Ssse3.IsSupported)
 		{
-			fixed (byte* fixedBytePtr = SeekableSource.Span)
+			ref var byteRef = ref MemoryMarshal.GetReference(SeekableSource.Span);
+			if (BitConverter.IsLittleEndian)
 			{
-				var headerVector = Sse3.LoadDquVector128(fixedBytePtr);
-				if (BitConverter.IsLittleEndian)
-				{
-					headerVector = Ssse3.Shuffle(headerVector, Header.EndianShuffle);
-				}
+				var headerVector = Unsafe.As<byte, Vector128<byte>>(ref byteRef);
+				headerVector = Ssse3.Shuffle(headerVector, Header.EndianShuffle);
 				header = Unsafe.As<Vector128<byte>, Header>(ref headerVector);
-				return Advance(Header.Length);
 			}
+			else
+			{
+				header = Unsafe.As<byte, Header>(ref byteRef);
+			}
+			return Advance(Header.Length);
 		}
 		else
 		{
