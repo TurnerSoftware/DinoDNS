@@ -47,7 +47,7 @@ public class DnsRawValueTests
 	[DataRow("abcd", new byte[] { 97, 98, 99, 100 }, true, DisplayName = "Equal")]
 	[DataRow("", new byte[] { }, true, DisplayName = "Equal (Empty)")]
 	[DataRow("ABCD", new byte[] { 97, 98, 99, 100 }, false, DisplayName = "Not Equal")]
-	public void Equals_CharsVsBytes(string valueA, byte[] valueB, bool expected)
+	public void Equals_CharsToBytes(string valueA, byte[] valueB, bool expected)
 	{
 		var dnsRawValueA = new DnsRawValue(valueA.AsMemory());
 		var dnsRawValueB = new DnsRawValue(valueB.AsMemory());
@@ -57,7 +57,7 @@ public class DnsRawValueTests
 	[DataRow("abcd", "abcd", true, DisplayName = "Equal")]
 	[DataRow("", "", true, DisplayName = "Equal (Empty)")]
 	[DataRow("ABCD", "abcd", false, DisplayName = "Not Equal")]
-	public void Equals_CharsVsChars(string valueA, string valueB, bool expected)
+	public void Equals_CharsToChars(string valueA, string valueB, bool expected)
 	{
 		var dnsRawValueA = new DnsRawValue(valueA.AsMemory());
 		var dnsRawValueB = new DnsRawValue(valueB.AsMemory());
@@ -67,7 +67,17 @@ public class DnsRawValueTests
 	[DataRow(new byte[] { 97, 98, 99, 100 }, new byte[] { 97, 98, 99, 100 }, true, DisplayName = "Equal")]
 	[DataRow(new byte[] { }, new byte[] { }, true, DisplayName = "Equal (Empty)")]
 	[DataRow(new byte[] { 192, 168, 0, 1 }, new byte[] { 97, 98, 99, 100 }, false, DisplayName = "Not Equal")]
-	public void Equals_BytesVsBytes(byte[] valueA, byte[] valueB, bool expected)
+	public void Equals_BytesToBytes(byte[] valueA, byte[] valueB, bool expected)
+	{
+		var dnsRawValueA = new DnsRawValue(valueA.AsMemory());
+		var dnsRawValueB = new DnsRawValue(valueB.AsMemory());
+		Assert.AreEqual(expected, dnsRawValueA.Equals(dnsRawValueB));
+	}
+	[DataTestMethod]
+	[DataRow(new byte[] { 97, 98, 99, 100 }, "abcd", true, DisplayName = "Equal")]
+	[DataRow(new byte[] { }, "", true, DisplayName = "Equal (Empty)")]
+	[DataRow(new byte[] { 97, 98, 99, 100 }, "ABCD", false, DisplayName = "Not Equal")]
+	public void Equals_BytesToChars(byte[] valueA, string valueB, bool expected)
 	{
 		var dnsRawValueA = new DnsRawValue(valueA.AsMemory());
 		var dnsRawValueB = new DnsRawValue(valueB.AsMemory());
