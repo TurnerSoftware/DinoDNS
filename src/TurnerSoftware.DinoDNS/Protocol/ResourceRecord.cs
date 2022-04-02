@@ -18,7 +18,7 @@ public readonly record struct ResourceRecord(
 	ReadOnlyMemory<byte> Data
 ) : IEquatable<ResourceRecord>
 {
-	public bool Equals(in ResourceRecord other) => 
+	public bool Equals(ResourceRecord other) => 
 		DomainName.Equals(other.DomainName) &&
 		Type == other.Type &&
 		Class == other.Class &&
