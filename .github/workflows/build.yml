@@ -37,7 +37,31 @@ jobs:
     - name: Build
       run: dotnet build --no-restore -c Release
     - name: Test with Coverage
-      run: dotnet test --no-restore --logger trx --results-directory ${{env.BUILD_ARTIFACT_PATH}}/coverage --collect "XPlat Code Coverage" --settings CodeCoverage.runsettings /p:SkipBuildVersioning=true
+      shell: pwsh
+      run: |
+        $env:COMPlus_EnableAVX2 = 1
+        $env:COMPlus_EnableSSE41 = 1
+        $env:COMPlus_EnableSSE2 = 1
+        Write-Host "Test Environment: Normal" -ForegroundColor "Cyan"
+        dotnet test --no-restore --logger trx --results-directory ${{env.BUILD_ARTIFACT_PATH}}/coverage --collect "XPlat Code Coverage" --settings CodeCoverage.runsettings /p:SkipBuildVersioning=true
+        
+        $env:COMPlus_EnableAVX2 = 0
+        $env:COMPlus_EnableSSE41 = 1
+        $env:COMPlus_EnableSSE2 = 1
+        Write-Host "Test Environment: AVX2 Disabled" -ForegroundColor "Cyan"
+        dotnet test --no-restore --logger trx --results-directory ${{env.BUILD_ARTIFACT_PATH}}/coverage --collect "XPlat Code Coverage" --settings CodeCoverage.runsettings /p:SkipBuildVersioning=true
+        
+        $env:COMPlus_EnableAVX2 = 0
+        $env:COMPlus_EnableSSE41 = 0
+        $env:COMPlus_EnableSSE2 = 1
+        Write-Host "Test Environment: SSE41 Disabled" -ForegroundColor "Cyan"
+        dotnet test --no-restore --logger trx --results-directory ${{env.BUILD_ARTIFACT_PATH}}/coverage --collect "XPlat Code Coverage" --settings CodeCoverage.runsettings /p:SkipBuildVersioning=true
+        
+        $env:COMPlus_EnableAVX2 = 0
+        $env:COMPlus_EnableSSE41 = 0
+        $env:COMPlus_EnableSSE2 = 0
+        Write-Host "Test Environment: SSE2 Disabled" -ForegroundColor "Cyan"
+        dotnet test --no-restore --logger trx --results-directory ${{env.BUILD_ARTIFACT_PATH}}/coverage --collect "XPlat Code Coverage" --settings CodeCoverage.runsettings /p:SkipBuildVersioning=true
     - name: Pack
       run: dotnet pack --no-build -c Release /p:PackageOutputPath=${{env.BUILD_ARTIFACT_PATH}}
     - name: Publish artifacts
