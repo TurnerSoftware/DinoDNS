@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.13.8" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.13.9" />
 		<PackageReference Include="DNS" Version="7.0.0" />
 		<PackageReference Include="DnsClient" Version="1.6.0" />
 	</ItemGroup>
